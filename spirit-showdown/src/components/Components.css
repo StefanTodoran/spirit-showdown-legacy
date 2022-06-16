@@ -1,0 +1,227 @@
+.server-listing {
+  cursor: pointer;
+}
+
+.server-listing:hover {
+  font-weight: bold;
+}
+
+
+
+/* Spirit styles */
+.deck {
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin: 10px;
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.deck:hover {
+  z-index: 10;
+}
+
+/* SpiritTile selection styles */
+
+.selectable, .selected {
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.selectable:hover {
+  transform: translateY(-5px);
+}
+
+.selected {
+  border: 2px solid black;
+  margin: 9px 10px;
+  transform: translateY(-5px);
+}
+
+.selected:hover {
+  border: 3px solid black;
+  margin: 8px 10px;
+  transform: translateY(-5px);
+}
+
+/* ================================= */
+/* Spirite and SpiritTile info cards */
+
+.card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+
+  border-radius: 5px;
+  background-color: #00000077;
+  color: white;
+  text-shadow: 0px 0px 5px rgb(0, 0, 0), 0px 0px 10px rgb(0, 0, 0);
+
+  opacity: 0;
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
+/* Unlike a hover card in a spirit container, for regular hover cards we don't
+want hovering it to count so we set pointer events to none. */
+.hover-card {
+  width: 200px;
+  padding: 0 50%;
+  transform: translateY(calc(-25%)) scale(0.1);
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.selectable:hover .hover-card, .selected:hover .hover-card {
+  opacity: 1;
+  transform: translateY(calc(-100% - 10px)) scale(1);
+}
+
+.spirit-container + .hover-card {
+  transform: scale(0.1);
+  z-index: 100;
+  /* Here we override the hover card default of no pointer events since for spirits
+  on the board, your mouse must be on the hover card to see the card. */
+  pointer-events: auto;
+}
+
+/* We use both selectors since once you hover spirit-container, the hover-card grows 
+to cover it, so it would jitter if we didn't include the second selector. */
+.spirit-container:hover + .hover-card, .spirit-container + .hover-card:hover {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cover-card {
+  top: 0;
+  width: 91%; /* 90% leaves a tiny gap for some reason?? */
+  padding: 0 5%;
+  height: 100%;
+
+  overflow-y: scroll;
+  transform: scale(0.9);
+}
+
+.cover-card:hover {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card p {
+  margin-block-end: 0;
+}
+
+.card span {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  font-size: small;
+}
+
+/* Spirit cover-card scrollbar */
+/* width */
+.card::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+.card::-webkit-scrollbar-track {
+  background: #00000000;
+}
+
+/* Handle */
+.card::-webkit-scrollbar-thumb {
+  background: #cccccc77;
+}
+
+/* Handle on hover */
+.card::-webkit-scrollbar-thumb:hover {
+  background: #ececec77;
+}
+/* =========================== */
+
+
+
+/* GameBoard and BoardTile styles */
+
+.tile {
+  width: calc(8vmin + 2px);
+  height: calc(8vmin + 2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 0;
+}
+
+.tile:hover {
+  border: 1px solid black;
+  width: 8vmin;
+  height: 8vmin;
+}
+.selected-tile {
+  border: 2px solid black !important;
+  width: calc(8vmin - 2px) !important;
+  height: calc(8vmin - 2px) !important;
+}
+
+.animated-tile {
+  animation: pulse 2s infinite;
+}
+
+.spirit-tile {
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.75; }
+  100% { opacity: 1; }
+}
+
+.player-one {
+  --color: #7DFF8D55;
+  cursor: pointer;
+}
+
+.player-two {
+  --color: #FF7D9D55;
+}
+
+.spirit-container {
+  filter: drop-shadow(0px 0px 5px #fff);
+  background-color: var(--color);
+}
+
+.valid-move {
+  width: calc(8vmin - 18px);
+  height: calc(8vmin - 18px);
+  background-clip: padding-box;
+  border: 10px solid #00000000; 
+  /* The reason the above border is 10 is because the width and height of this box are 20px less than
+  the size of a .tile, so we need 10px border on each side to have the same size for the transform below to work. */
+
+  position: absolute;
+  transform: translate(calc(100% * var(--xdistance)), calc(100% * var(--ydistance)));
+  pointer-events: none;
+
+  animation: on_off 2s infinite;
+  --absolute-x: max(var(--xdistance), calc(-1 * var(--xdistance)));
+  --absolute-y: max(var(--ydistance), calc(-1 * var(--ydistance)));
+  animation-delay: calc(-1s + 120ms * (var(--absolute-x) + var(--absolute-y)));
+}
+
+.valid-move.flipped {
+  transform: translate(calc(-100% * var(--xdistance)), calc(-100% * var(--ydistance)));
+}
+
+@keyframes on_off {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}

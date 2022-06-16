@@ -1,0 +1,114 @@
+import { Component } from 'react';
+import { io } from 'socket.io-client';
+
+import LobbyForm from './LobbyForm';
+import JoinForm from './JoinForm';
+
+import Loader from './Loader.js';
+import GameHandler from './GameHandler';
+
+// This class handles most functionality of the site after the use deck button 
+// has been clicked. It first displays either the JoinForm or LobbyForm pages,
+// and handles the socket connection used for both of those and the GameHandler.
+// Once a lobby has been joined, the GameHandler is displayed and that component
+// handles most interactions from then on, although it uses callbacks to communicate
+// to the server.
+export default class MultiplayerHandler extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      connected: false,
+      socket: null,
+
+      lobby_id: null,
+      player_id: null,
+      game_state: null,
+    };
+
+    this.setLobbyId = this.setLobbyId.bind(this);
+    this.leaveLobbyCreation = this.leaveLobbyCreation.bind(this);
+    this.doMove = this.doMove.bind(this);
+  }
+
+  componentDidMount() {
+    const callback = (player_id) => {
+      this.setState({ player_id: player_id });
+    };
+
+    const socket = io.connect('http://localhost:8080');
+    socket.on('connect', () => {
+      socket.emit('get-player-id', callback);
+
+      setTimeout(() => {
+        this.setState({
+          connected: true,
+          socket: socket,
+        });
+      }, 750); // otherwise it flashes too fast on good connections, looks wack
+    });
+
+    socket.on('start-game', () => {
+      socket.emit('provide-deck', this.props.deck, this.state.lobby_id);
+      this.props.startedCallback(); // informs parent to remove menu buttons
+    });
+
+    socket.on('init-game-state', (game_state) => {
+      this.setState({ game_state: game_state });
+    });
+
+    socket.on('turn-update', (game_state) => {
+      this.setState({ game_state: game_state });
+    });
+  }
+
+  // Used as a callback by JoinForm and LobbyForm to set the lobby_id
+  // that the player is in. The socket emitting to the server is handled
+  // by the child components.
+  setLobbyId(lobby_id) {
+    this.setState({ lobby_id: lobby_id });
+  }
+
+  // Used by LobbyForm when it is unmounting to leave the lobby if the
+  // player created one but did not follow through.
+  leaveLobbyCreation() {
+    if (!this.state.game_state && this.state.lobby_id !== null) {
+      this.state.socket.emit('exit-lobby', this.state.lobby_id);
+      this.setState({ lobby_id: null });
+    }
+  }
+
+  // Used by GameHandler to send a move to the server.
+  doMove(spirit, tile) {
+    const callback = (success, game_state) => {
+      if (success) {
+        this.setState({ game_state: game_state });
+      }
+    };
+
+    this.state.socket.emit('do-spirit-move', spirit, tile, this.state.lobby_id, callback);
+  }
+
+  render() {
+    // Page is set by App, the parent component since the navbar is there.
+    const page = (this.props.page === 'create') 
+      ? <LobbyForm socket={this.state.socket} setLobbyCallback={this.setLobbyId} leaveLobbyCallback={this.leaveLobbyCreation}/>
+      : <JoinForm socket={this.state.socket} setLobbyCallback={this.setLobbyId}/>;
+    
+    return (
+      <>
+        {!this.state.connected && <Loader text={'Connecting to server'}/>}
+        {!this.state.game_state && this.state.connected && <>{page}</>}
+        {this.state.game_state && 
+          <>
+            <GameHandler 
+              deck={this.props.deck} doMoveCallback={this.doMove} 
+              player_id={this.state.player_id} gameState={this.state.game_state} 
+            />
+            {this.state.game_state.turn === this.state.player_id && <p>Your turn to play</p>}
+            {this.state.game_state.turn !== this.state.player_id && <Loader text={"Waiting for opponent's move"}/>}
+          </>
+        }
+      </>
+    )
+  }
+}
