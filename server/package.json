@@ -1,5 +1,5 @@
 {
-  "type":"module",
+  "type": "module",
   "dependencies": {
     "hex-color-to-color-name": "^1.0.2",
     "socket.io": "^4.5.0"

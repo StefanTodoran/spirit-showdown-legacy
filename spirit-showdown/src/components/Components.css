@@ -72,10 +72,10 @@ want hovering it to count so we set pointer events to none. */
 .hover-card {
   width: 200px;
   padding: 0 50%;
-  transform: translateY(calc(-25%)) scale(0.1);
+  transform: translateY(calc(-50%)) scale(0.5);
   pointer-events: none;
   /* backdrop-filter: blur(2px); */ /* Has weird behavior on edge tiles? */
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transition: opacity 0.1s ease-out, transform 0.1s ease-out;
 }
 
 .selectable:hover .hover-card, .selected:hover .hover-card {

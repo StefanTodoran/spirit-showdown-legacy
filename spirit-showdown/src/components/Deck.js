@@ -4,6 +4,22 @@ import SpiritTile from './SpiritTile';
 import { createRandomSpirit } from '../spiritGeneration';
 
 export default class Deck extends Component {
+  addGameAttr(spirit, seed) {
+    return {
+      ...spirit,
+      owner: this.props.player,
+      position: undefined, // undefined if in hand
+      seed: seed,
+
+      turns_until_move: 0, // incremented if frozen or cursed
+      turns_unmoved: 0,
+
+      current_hp: spirit.HP,
+      hp_boost: 0,
+      dmg_boost: 0,
+    }
+  }
+
   render() {
     const deck = [];
     for (let i = 0; i < this.props.deck.length; i++) {

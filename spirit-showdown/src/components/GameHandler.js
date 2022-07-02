@@ -57,7 +57,7 @@ export default class GameHandler extends Component {
           this.props.beginBattleCallback(this.state.selectedSpirit, spirit_id);
         }
         this.setState({
-          selectedSpirit: null,
+          selectedSpirit: spirit_id,
         });
       } else {
         this.setState({

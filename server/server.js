@@ -308,7 +308,7 @@ function spiritHP(spirit_id) {
 function getSpiritTag(spirit, player_id, seed, board_pos, hp) {
   const _player_id = player_id || spiritOwner(spirit);
   const _seed = seed || spiritSeed(spirit);
-  const _board_pos = board_pos || spiritPosition(spirit)[0];
+  const _board_pos = board_pos || tilePosition(spirit)[0];
   const _hp = hp || spiritHP(spirit);
 
   return `spirit(${_player_id})[${_seed}]<${_board_pos}>:${_hp}`;
@@ -397,7 +397,7 @@ function canWalkTile(game, tile, spirit) {
   if (type === 'water' && (spirit_obj.abilities.includes(0) || spirit_obj.abilities.includes(7) || spirit_obj.abilities.includes(8))) {
     return true;
   } 
-  if (type === 'portal' && (spirit_obj.abilities.includes(9))) {
+  if (type === 'portal' && (spirit_obj.abilities.includes(9) || spirit_obj.abilities.includes(28))) {
     return true;
   }
   return false;
@@ -454,12 +454,14 @@ function doBattleTurn(battle) {
 
   // If a spirit attempts to dodge, it has a chance to avoid all damage.
   if (battle.player_one_move === 'dodge') {
-    if (Math.random() < 0.5) {
+    const chance = (spirit_1.abilities.includes(5)) ? 0.6 : 0.5;
+    if (Math.random() < chance) {
       spirit_2_DMG = 0;
     }
   }
   if (battle.player_two_move === 'dodge') {
-    if (Math.random() < 0.5) {
+    const chance = (spirit_2.abilities.includes(5)) ? 0.6 : 0.5;
+    if (Math.random() < chance) {
       spirit_1_DMG = 0;
     }
   }
@@ -532,6 +534,26 @@ function updateGraveyard(game) {
 
 // Changes the turn of the game to the player whose turn it is currently not.
 function turnChange(game) {
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      const spirit = game.spirits_board[y][x];
+      if (spirit !== '') {
+        const spirit_obj = createRandomSpirit(spiritSeed(spirit));
+        let updated_tag = spirit;
+
+        if (spirit_obj.abilities.includes(2)) {
+          let hp = spiritHP(spirit);
+          if (hp < spirit_obj.HP) {
+            hp += Math.min(spirit_obj.HP - hp, spirit_obj.HP * 0.05);
+          }
+          updated_tag = getSpiritTag(spirit, null, null, null, hp);
+        }
+
+        game.spirits_board[y][x] = updated_tag;
+      }
+    }
+  }
+
   game.turn = (game.turn === game.player_one) ? game.player_two : game.player_one;
   updateGraveyard(game);
 }
@@ -680,10 +702,12 @@ io.on('connection', (socket) => {
         if (tile_type === required && tileEmpty(game, tile)) {
           setTileOccupant(game, tile, getSpiritTag(spirit, game.turn, seed, tilePosition(tile)[0]));
 
+          /* ABILITY: MOMENTUM */
           const spirit_obj = createRandomSpirit(spiritSeed(spirit));
           if (!spirit_obj.abilities.includes(23)) {
             turnChange(game);
           }
+
           io.in(lobby_id).emit('turn-update', game);
         }
       }
@@ -711,7 +735,12 @@ io.on('connection', (socket) => {
     const spirit_pos = spirit.match(pos_regex)[0];
     const enemy_pos = enemy.match(pos_regex)[0];
 
-    if (spirit_pos === '' || enemy_pos === '') {
+    // Secondly we need to ensure the player isn't trying to battle their
+    // own spirit on accident.
+
+    const enemy_owner = spiritOwner(enemy);
+
+    if (spirit_pos === '' || enemy_pos === '' || enemy_owner === socket.id) {
       /*DEBUG*/ console.log("RETURN > Spirit or enemy is not on the board");
       return;
     }
