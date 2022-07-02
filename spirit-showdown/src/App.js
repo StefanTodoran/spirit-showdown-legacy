@@ -44,22 +44,23 @@ export class App extends Component {
   // Generates a string of comma separated seeds from the current deck
   // for easy pasting, and copies it to the clipboard. Displays a tooltip.
   saveDeck = () => {
-    navigator.clipboard.writeText(this.state.seed);
+    navigator.clipboard.writeText(this.state.deck);
     document.querySelector('.tooltip').classList.remove('hidden');
     setTimeout(() => {
       document.querySelector('.tooltip').classList.add('hidden');
     }, 1500);
   }
 
-  // Seeds generated from saveDeck() should not have <>,(), or [] characters in them,
+  // Seeds generated from saveDeck() should not have <>,(),[],: or / characters in them,
   // but we remove them here in case the user pastes something else in. Those characters
   // are used for game logic so it could break the game.
   loadDeck = () => {
     const seed = prompt('Enter the seed to load your deck: (must be at least 6 characters)')
       .replaceAll('<', '').replaceAll('>', '')
       .replaceAll('(', '').replaceAll(')', '')
-      .replaceAll('[', '').replaceAll(']', '');
-    let seeds = seed.split(', ');
+      .replaceAll('[', '').replaceAll(']', '')
+      .replaceAll(':', '').replaceAll('/', '');
+    let seeds = seed.split(',');
     if (seeds.length < 6) {
       const size = Math.floor(seeds.length / 6);
       const parts_regex = new RegExp(`/.{1,${size}}/`);
@@ -82,8 +83,7 @@ export class App extends Component {
                 }
                 <button onClick={this.buildNewDeck}>Create a new deck</button>
 
-                <button onClick={this.saveDeck}>Save this deck</button>
-                <span className="tooltip hidden">Copied to Clipboard!</span>
+                <button onClick={this.saveDeck}>Save this deck<span className="tooltip hidden">Copied to<br/>Clipboard!</span></button>
                 
                 <button onClick={this.loadDeck}>Load saved deck</button>
                 <hr className={"menu-hr"}/>

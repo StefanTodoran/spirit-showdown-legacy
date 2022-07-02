@@ -9,9 +9,9 @@ export default class Deck extends Component {
     for (let i = 0; i < this.props.deck.length; i++) {
       const seed = this.props.deck[i];
       // SPIRIT TAG CONSTRUCTION: (note how board_pos is empty in hand)
-      // spirit(player_id)[seed]<board_pos>
-      const id = `spirit(${this.props.player})[${seed}]<>`;
+      // spirit(player_id)[seed]<board_pos>:hp
       const spirit = createRandomSpirit(seed);
+      const id = `spirit(${this.props.player})[${seed}]<>:${spirit.HP}`;
       if (this.props.display) {
         deck.push( <Spirit key={id} spirit={spirit}/> );
       } else {

@@ -15,7 +15,7 @@ export default class GameBoard extends Component {
         const contents = this.props.spirits_board[i][j]; // tile's spirit board contents
         const hasSpirit = contents !== '';
         if (hasSpirit) {
-          const seed_regex = /(?<=\[)(.*?)(?=\])/; // Grabs everything between < and >, not including < and >
+          const seed_regex = /(?<=\[)(.*?)(?=\])/; // Grabs everything between [ and ], not including [ and ]
           const player_regex = /(?<=\()(.*?)(?=\))/; // Grabs everything between ( and ), not including ( and )
 
           const seed = contents.match(seed_regex)[0];
@@ -34,7 +34,7 @@ export default class GameBoard extends Component {
             key={id} id={id}
             type={this.props.tiles_board[i][j]} flipped={this.props.flipped}
             pos={[i, j]} max={[this.props.tiles_board[i].length, this.props.tiles_board.length]}
-            spirit={spirit} enemy={enemy} selected={selected}
+            spirit={spirit} enemy={enemy} selected={selected} spirit_tag={contents}
             selectCallback={callback} 
           />
         );

@@ -23,11 +23,16 @@ export default class MultiplayerHandler extends Component {
       lobby_id: null,
       player_id: null,
       game_state: null,
+    
+      battle_move_queued: false,
+      battle_events: null,
     };
 
     this.setLobbyId = this.setLobbyId.bind(this);
     this.leaveLobbyCreation = this.leaveLobbyCreation.bind(this);
     this.doMove = this.doMove.bind(this);
+    this.doBattleMove = this.doBattleMove.bind(this);
+    this.beginBattle = this.beginBattle.bind(this);
   }
 
   componentDidMount() {
@@ -59,6 +64,23 @@ export default class MultiplayerHandler extends Component {
     socket.on('turn-update', (game_state) => {
       this.setState({ game_state: game_state });
     });
+
+    socket.on('battle-update', (game_state, battle_events) => {
+      this.setState({ game_state: game_state, battle_events: battle_events, battle_move_queued: false });
+      setTimeout(() => {
+        this.setState({ battle_events: null });
+      }, 750);
+    });
+
+    socket.on('turn-update:battle+move', (game_state) => {
+      const battle = game_state.battle;
+      game_state.battle = null;
+      this.setState({ game_state: game_state });
+      setTimeout(() => {
+        game_state.battle = battle;
+        this.setState({ game_state: game_state });
+      }, 3000);
+    });
   }
 
   // Used as a callback by JoinForm and LobbyForm to set the lobby_id
@@ -79,13 +101,16 @@ export default class MultiplayerHandler extends Component {
 
   // Used by GameHandler to send a move to the server.
   doMove(spirit, tile) {
-    const callback = (success, game_state) => {
-      if (success) {
-        this.setState({ game_state: game_state });
-      }
-    };
+    this.state.socket.emit('do-spirit-move', spirit, tile, this.state.lobby_id);
+  }
 
-    this.state.socket.emit('do-spirit-move', spirit, tile, this.state.lobby_id, callback);
+  doBattleMove(move) {
+    this.setState({ battle_move_queued: true });
+    this.state.socket.emit('do-battle-move', move, this.state.lobby_id);
+  }
+
+  beginBattle(spirit, enemy) {
+    this.state.socket.emit('begin-battle', spirit, enemy, this.state.lobby_id);
   }
 
   render() {
@@ -101,11 +126,12 @@ export default class MultiplayerHandler extends Component {
         {this.state.game_state && 
           <>
             <GameHandler 
-              deck={this.props.deck} doMoveCallback={this.doMove} 
-              player_id={this.state.player_id} gameState={this.state.game_state} 
+              deck={this.props.deck} player_id={this.state.player_id}
+              doMoveCallback={this.doMove} doBattleMoveCallback={this.doBattleMove}
+              beginBattleCallback={this.beginBattle}
+              battleMoveQueued={this.state.battle_move_queued}
+              gameState={this.state.game_state} battleEvents={this.state.battle_events}
             />
-            {this.state.game_state.turn === this.state.player_id && <p>Your turn to play</p>}
-            {this.state.game_state.turn !== this.state.player_id && <Loader text={"Waiting for opponent's move"}/>}
           </>
         }
       </>

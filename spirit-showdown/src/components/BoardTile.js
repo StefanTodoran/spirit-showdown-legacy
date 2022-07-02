@@ -8,12 +8,14 @@ export default class BoardTile extends Component {
   }
 
   handleClick = () => {
+    console.log(this.props.id);
     this.props.selectCallback(this.props.id);
   }
 
   render() {
     const wallColors = ['#404040', '#3A3A3A']; // light, dark
-    const waterColors = ["#93EAEA", "#93FFFF"];
+    // const waterColors = ["#93FFFF", "#93EAEA"];
+    const waterColors = ['#B3FBFB', '#B0EAEA'];
     const portalColors = ["#D77DFF", "#CD72F4"];
     const player1Colors = ["#7DFF8D", "#72EC80"];
     const player2Colors = ["#FF7D9D", "#EC7290"];
@@ -68,6 +70,7 @@ export default class BoardTile extends Component {
 
     const sprite = [];
     const abilities = [];
+    let spirit_HP;
     if (this.props.spirit) {    
       // build up the sprite from the array tile by tile
       for (let i = 0; i < this.props.spirit.sprite.length; i++) {
@@ -88,21 +91,27 @@ export default class BoardTile extends Component {
           </p>
         );
       }
+
+      const hp_regex = /:\d+/ // Matches the part at the end of a spirit tag of the format :###
+      spirit_HP = parseInt(this.props.spirit_tag.match(hp_regex)[0].slice(1));
     }
 
     const valid = [];
     if (!this.props.enemy && this.props.selected) {
-      for (let x = -2; x < 3; x++) {
-        for (let y = -2; y < 3; y++) {
-          if (!(x === 0 && y === 0) && (Math.abs(x) + Math.abs(y) <= 2)) {
+      const maxDist = 3;
+      for (let x = -maxDist; x < maxDist + 1; x++) {
+        for (let y = -maxDist; y < maxDist + 1; y++) {
+          if (!(x === 0 && y === 0) && (Math.abs(x) + Math.abs(y) <= maxDist)) {
             const selection = [this.props.pos[1] + x, this.props.pos[0] + y];
             if (!(selection[0] < 0 || selection[1] < 0 || selection[0] >= this.props.max[0] || selection[1] >= this.props.max[1])) {
+              const digit = 2*(maxDist + 1 - (Math.abs(x) + Math.abs(y)));
+              const bgColor = `#000000${digit}${digit}`;
               valid.push(
                 <div 
                   className={(this.props.flipped) ? 'valid-move flipped' :'valid-move tile'} 
                   key={`selection<${x},${y}>`} style={{
                     '--xdistance': x, '--ydistance': y,
-                    ...( ((Math.abs(x) + Math.abs(y)) > 1) ? { backgroundColor: "#00000022" } : { backgroundColor: "#00000055" })
+                    ...( { backgroundColor: bgColor }),
                   }}
                 />
               );
@@ -127,8 +136,7 @@ export default class BoardTile extends Component {
             <div className={((this.props.enemy) ? 'player-two' : 'player-one') + ' spirit-container'}>
               {sprite}
             </div>
-            {this.props.enemy && 
-              <section className='card hover-card'>
+              <section className='card tooltip-card'>
                 <br/>
                 <h2>{this.props.spirit.name}</h2>
                 <h3>({this.props.spirit.tier} tier)</h3>
@@ -139,8 +147,9 @@ export default class BoardTile extends Component {
                   <span><strong>Priority:&nbsp;</strong>{this.props.spirit.priority}</span>
                   <br />
                 </p>
+                <div className="health-bar horizontal" style={{'--fill': (spirit_HP/this.props.spirit.HP)}}/>
+                <br/>
               </section>
-            }
             {valid}
           </>
         }

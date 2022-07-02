@@ -29,7 +29,6 @@ export default class Spirit extends Component {
 
     // build up the sprite from the array tile by tile
     const sprite = [];
-    const keys = [];
     for (let i = 0; i < this.props.spirit.sprite.length; i++) {
       const row = [];
       for (let j = 0; j < this.props.spirit.sprite[i].length; j++) {
@@ -37,7 +36,12 @@ export default class Spirit extends Component {
         const tile = (this.props.spirit.sprite[i][j] === 0) ? blankTile(i, j) : fillTile(i, j, color);
         row.push(tile);
       }
-      sprite.push(<div key={`sprite-row<${i}>`} style={{display: 'flex', flexDirection: 'row', margin: 0}}>{row}</div>);
+      sprite.push(
+        <div key={`sprite-row<${i}>`} className='sprite-pixel'
+        style={{display: 'flex', flexDirection: 'row', margin: 0}}>
+          {row}
+        </div>
+      );
     }
 
     const abilities = [];
@@ -51,7 +55,7 @@ export default class Spirit extends Component {
     }
 
     return (
-      <div className='deck'>
+      <div className={(this.props.flashing) ? 'deck flashing-sprite' : 'deck'}>
         {sprite}
         <section className='card cover-card'>
           <br/><br/>
