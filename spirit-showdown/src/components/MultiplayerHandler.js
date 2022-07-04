@@ -71,6 +71,8 @@ export default class MultiplayerHandler extends Component {
       setTimeout(() => {
         this.setState({ battle_events: null });
       }, 750);
+
+      console.log(game_state);
     });
 
     socket.on('turn-update:battle+move', (game_state) => {
@@ -80,7 +82,7 @@ export default class MultiplayerHandler extends Component {
       setTimeout(() => {
         game_state.battle = battle;
         this.setState({ game_state: game_state });
-      }, 3000);
+      }, 1500);
     });
   }
 

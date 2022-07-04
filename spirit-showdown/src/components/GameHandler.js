@@ -33,7 +33,7 @@ export default class GameHandler extends Component {
     window.onmousemove = setPositions;
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate() {
     cards = document.querySelectorAll('.tooltip-card');
     if (this.props.gameState.battle) {
       if (this.props.gameState.battle.finished) {
@@ -48,27 +48,29 @@ export default class GameHandler extends Component {
     }
   }
 
+  // TODO: make this more robust
+  sameSpirit(a, b) {
+    return a.seed === b.seed && a.owner === b.owner;
+  }
+
   // selects the provided spirit, unless it is already selected,
   // in which case it deselects the provided spirit leaving none selected
-  selectSpirit(spirit_id) {
-    if (this.state.selectedSpirit && spirit_id) {
-      if (this.state.selectedSpirit !== spirit_id) {
-        if (this.props.gameState.turn === this.props.player_id) {
-          this.props.beginBattleCallback(this.state.selectedSpirit, spirit_id);
-        }
-        this.setState({
-          selectedSpirit: spirit_id,
-        });
+  selectSpirit(spirit) {
+    if (spirit !== null) {
+      if (this.state.selectedSpirit === null) {
+        this.setState({ selectedSpirit: spirit });
+      } else if (this.sameSpirit(spirit, this.state.selectedSpirit)) {
+        this.setState({ selectedSpirit: null });
+      } else if (this.state.selectedSpirit.owner === this.props.player_id && spirit.owner !== this.props.player_id) {
+        this.props.beginBattleCallback(this.state.selectedSpirit, spirit);
+        this.setState({ selectedSpirit: null });
       } else {
-        this.setState({
-          selectedSpirit: null,
-        });
+        this.setState({ selectedSpirit: spirit });
       }
     } else {
-      this.setState({
-        selectedSpirit: spirit_id,
-      });
+      this.setState({ selectedSpirit: null });
     }
+    this.selectTile(null);
   }
 
   // selects the provided tile, unless it is already selected,
@@ -78,7 +80,10 @@ export default class GameHandler extends Component {
       this.setState({
         selectedTile: tile_id,
       });
-      this.moveSpiritToTile(this.state.selectedSpirit, tile_id);
+      if (this.state.selectedSpirit) {
+        this.moveSpiritToTile(this.state.selectedSpirit, tile_id);
+        this.selectSpirit(null);
+      }
     } else {
       this.setState({
         selectedTile: null,
@@ -86,13 +91,13 @@ export default class GameHandler extends Component {
     }
   }
 
-  moveSpiritToTile(spirit_id, tile_id) {
+  moveSpiritToTile(spirit, tile_id) {
     if (this.props.gameState.turn !== this.props.player_id) {
       this.selectSpirit(null);
       this.selectTile(null);
     } else {
-      if (spirit_id !== null && tile_id !== null) {
-        this.props.doMoveCallback(spirit_id, tile_id);
+      if (spirit !== null && tile_id !== null) {
+        this.props.doMoveCallback(spirit, tile_id);
         // Deselect after move attempt
         this.selectSpirit(null);
         this.selectTile(null);
@@ -115,6 +120,7 @@ export default class GameHandler extends Component {
           />
           <Deck 
             deck={hand}
+            graveyard={this.props.gameState.graveyard}
             selectCallback={this.selectSpirit}
             selected={this.state.selectedSpirit}
             player={this.props.player_id}

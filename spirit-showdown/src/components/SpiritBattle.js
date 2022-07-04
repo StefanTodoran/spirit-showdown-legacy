@@ -12,20 +12,10 @@ export default class SpiritBattle extends Component {
   }
 
   render() {
-    const spirit_tag = (this.props.player_one) ? this.props.battle.player_one_spirit : this.props.battle.player_two_spirit;
-    const enemy_tag = (this.props.player_one) ? this.props.battle.player_two_spirit : this.props.battle.player_one_spirit;
+    const spirit = (this.props.player_one) ? this.props.battle.player_one_spirit : this.props.battle.player_two_spirit;
+    const enemy = (this.props.player_one) ? this.props.battle.player_two_spirit : this.props.battle.player_one_spirit;
 
-    const seed_regex = /(?<=\[)(.*?)(?=\])/;
-    const spirit_seed = String(spirit_tag).match(seed_regex)[0];
-    const enemy_seed = String(enemy_tag).match(seed_regex)[0];
-
-    const spirit = createRandomSpirit(spirit_seed);
-    const enemy = createRandomSpirit(enemy_seed);
-
-    const hp_regex = /:\d+/ // Matches the part at the end of a spirit tag of the format :###
-    const spirit_HP = parseInt(spirit_tag.match(hp_regex)[0].slice(1));
-    const enemy_HP = parseInt(enemy_tag.match(hp_regex)[0].slice(1));
-    const battleOver = spirit_HP === 0 || enemy_HP === 0;
+    const battleOver = spirit.current_hp === 0 || enemy.current_hp === 0;
 
     let flashing = (this.props.events !== null) ? this.props.events : [false, false];
     if (this.props.player_one) {
@@ -38,31 +28,58 @@ export default class SpiritBattle extends Component {
         canFlee = true;
     }
 
-    const prevMove = (this.props.player_one) ? this.props.battle.player_two_prev : this.props.battle.player_one_prev;
+    const enemyPrevMove = (this.props.player_one) ? this.props.battle.player_two_prev : this.props.battle.player_one_prev;
+    const myPrevMove = (this.props.player_one) ? this.props.battle.player_one_prev : this.props.battle.player_two_prev;
+
+    const enemyBoost = enemy.dmg_boost * enemy.permanent_dmg_boost;
+    const myBoost = spirit.dmg_boost * spirit.permanent_dmg_boost;
+
+    console.log(enemy.permanent_dmg_boost, enemy.effects);
     return (
       <>
         <div style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px', 
           padding: 10, margin: 10, display: 'flex', flexDirection: 'row' }}>
-          <div className="health-bar" style={{'--fill': (enemy_HP/enemy.HP)}}/>
-          <Spirit spirit={enemy} flashing={flashing[0]}/>
+          <div className="health-bar" style={{'--fill': (enemy.current_hp/enemy.HP)}}/>
+          <div>
+            <Spirit spirit={enemy} flashing={flashing[0]}/>
+            <div className="spirit-stats">
+              <p>
+                <strong>{enemy.current_hp + enemy.hp_boost}</strong> /{enemy.HP} HP
+              </p>
+              {enemyBoost !== 1 && <p><strong>{enemyBoost}x</strong> ATK</p>}
+            </div>
+          </div>
         </div>
         <div style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px', 
           padding: 10, margin: 10, display: 'flex', flexDirection: 'row' }}>
-          <div className="health-bar" style={{'--fill': (spirit_HP/spirit.HP)}}/>
-          <Spirit spirit={spirit} flashing={flashing[1]}/>
+          <div className="health-bar" style={{'--fill': (spirit.current_hp/spirit.HP)}}/>
+          <div>
+            <Spirit spirit={spirit} flashing={flashing[1]}/>
+            <div className="spirit-stats">
+              <p>
+                <strong>{spirit.current_hp + spirit.hp_boost}</strong> /{spirit.HP + spirit.hp_boost} HP
+              </p>
+              {myBoost !== 1 && <p><strong>{myBoost}x</strong> ATK</p>}
+            </div>
+          </div>
           <section style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly' }}>
-            <button disabled={battleOver} onClick={ () => { this.selectMove('attack') } }>Attack</button>
-            <button disabled={battleOver} onClick={ () => { this.selectMove('meditate') } }>Meditate</button>
-            <button disabled={battleOver} onClick={ () => { this.selectMove('dodge') } }>Dodge</button>
+            <button disabled={battleOver} onClick={() => { this.selectMove('attack') }} id="attack-button">
+              Attack</button>
+            <button disabled={battleOver} onClick={() => { this.selectMove('meditate') }} id="meditate-button">
+              Meditate</button>
+            <button disabled={battleOver} onClick={() => { this.selectMove('dodge') }} id="dodge-button">
+              Dodge</button>
             {canFlee && <button disabled={battleOver} onClick={ () => { this.selectMove('flee') } }>Flee</button>}
           </section>
         </div>
-        {prevMove && <p>Opponent used <strong>{prevMove}</strong></p>}
-        {!battleOver && <>
+        {enemyPrevMove && myPrevMove !== 'flee' && <p style={{marginBottom: 0}}>Opponent used <strong>{enemyPrevMove}</strong></p>}
+        {/* {myPrevMove && <p style={{fontSize: 12, marginTop: 0}}>You used <em>{myPrevMove}</em></p>} */}
+        {!battleOver && (enemyPrevMove !== 'flee' && myPrevMove !== 'flee') && <>
           {!this.props.queued && <p>Select a move</p>}
           {this.props.queued && <Loader text={"Waiting for opponent's move"}/>}
         </>}
-        {battleOver && <p>{(spirit_HP > 0) ? "You won!" : "You lost."}</p>}
+        {myPrevMove === 'flee' && <p>You successfully <strong>fled</strong></p>}
+        {battleOver && <p>{(spirit.current_hp > 0) ? "You won!" : "You lost."}</p>}
       </>
     );
   }

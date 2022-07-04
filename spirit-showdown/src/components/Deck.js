@@ -4,39 +4,58 @@ import SpiritTile from './SpiritTile';
 import { createRandomSpirit } from '../spiritGeneration';
 
 export default class Deck extends Component {
-  addGameAttr(spirit, seed) {
+  gameReadySpirit(seed) {
+    const spirit = createRandomSpirit(seed);
     return {
       ...spirit,
       owner: this.props.player,
-      position: undefined, // undefined if in hand
+      position: null, // null if in hand
       seed: seed,
 
-      turns_until_move: 0, // incremented if frozen or cursed
       turns_unmoved: 0,
+      cooldown: 0, // incremented if dead, revived when it hits 0 again
 
       current_hp: spirit.HP,
-      hp_boost: 0,
-      dmg_boost: 0,
+      hp_boost: 0, // this number is stacked on health
+      dmg_boost: 1, // this is a multiplier on damage
+    
+      permanent_dmg_boost: 1,
+      // permanent_hp_boost: 1,
+      effects: {},
     }
+  }
+
+  sameSpirit(a, b) {
+    return a.seed === b.seed && a.owner === b.owner;
   }
 
   render() {
     const deck = [];
     for (let i = 0; i < this.props.deck.length; i++) {
       const seed = this.props.deck[i];
-      // SPIRIT TAG CONSTRUCTION: (note how board_pos is empty in hand)
-      // spirit(player_id)[seed]<board_pos>:hp
-      const spirit = createRandomSpirit(seed);
-      const id = `spirit(${this.props.player})[${seed}]<>:${spirit.HP}`;
+      const spirit = this.gameReadySpirit(seed);
+      const id = `spirit(${this.props.player})[${seed}]`;
+      
       if (this.props.display) {
         deck.push( <Spirit key={id} spirit={spirit}/> );
       } else {
-        const selected = this.props.selected === id;
+        const selected = (this.props.selected) ? this.sameSpirit(this.props.selected, spirit) : false;
         deck.push(
-          <SpiritTile key={id} spirit={spirit} id={id} 
-            selectCallback={this.props.selectCallback} selected={selected}
-          />
+          <SpiritTile key={id} spirit={spirit} selectCallback={this.props.selectCallback} selected={selected}/>
         );
+      }
+    }
+
+    const graveyard = [];
+    if (this.props.graveyard) {
+      for (let i = 0; i < this.props.graveyard.length; i++) {
+        const spirit = this.props.graveyard[i];
+        if (spirit.owner === this.props.player) {
+          const id = `spirit(${this.props.player})[${spirit.seed}]`;
+          graveyard.push(
+            <SpiritTile key={id} spirit={this.props.graveyard[i]} selected={false} dead={true}/>
+          );
+        }
       }
     }
 
@@ -45,10 +64,9 @@ export default class Deck extends Component {
         display: 'grid', 
         width: 'min(95vw, 1500px)',
         justifyContent: 'center',
-        // gridTemplateColumns: 'repeat(auto-fit, 225px)',
-        ...( (this.props.display) ? { gridTemplateColumns: 'repeat(auto-fit, 225px)' } : { gridTemplateColumns: 'repeat(auto-fit, 100px)' } ),
+        ...( this.props.display ? { gridTemplateColumns: 'repeat(auto-fit, 225px)' } : { gridTemplateColumns: 'repeat(auto-fit, 100px)' } ),
       }}>
-        {deck}
+        {deck}{graveyard}
       </div>
     );
   }

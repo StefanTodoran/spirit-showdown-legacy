@@ -44,14 +44,14 @@ const tiles_boards = [
   ],
 ];
 const spirits_board = [
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
-  ['','','','','','','','','','','','',],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
+  [null,null,null,null,null,null,null,null,null,null,null,null,],
 ];
 
 const BOARD_WIDTH = spirits_board[0].length;
@@ -64,18 +64,17 @@ function fakeDeepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-// Iterates over each item in a list, turning each element into a string.
-function stringifyList(list) {
-  for (let i = 0; i < list.length; i++) {
-    list[i] = String(list[i]);
-  }
-}
-
 // removes the given item from the list
 function remove(list, item) {
   const pos = list.indexOf(item);
   return list.splice(pos,  1);
 }
+
+// TODO: REPLACE CALLS TO RANDOM() AND MATH.RANDOM() WITH THIS!!!
+// Returns a random integer between min and max
+function randInt(min, max) {
+  return Math.max(min, Math.floor(Math.random() * max));
+};
 
 // TODO:
 // Replace this with writing to a file or sql database.
@@ -128,28 +127,25 @@ function createGameObj(players) {
     // When the battle object is null, the client will know to display
     // the battle screen. This object should have a structure as follows:
     // game.battle = {
-    //   initiator: game.player_one, <-- the player who started combat, only they can flee
-    //   player_one_spirit: `spirit(${game.player_one})[${487728996579.8983}]<3,1>:500`,
-    //   player_two_spirit: `spirit(${game.player_two})[${748118784003.3025}]<3,2>:400`,
-    //   player_one_move: null, <-- moves are executed at the same time, so we wait for both
+    //   initiator: game.player_one, <-- The player who started combat, only they can flee.
+    //   player_one_spirit: (some spirit obj here),
+    //   player_two_spirit: (some spirit obj here),
+    //   player_one_move: null, <-- Moves are executed at the same time, so we wait for both
     //   player_two_move: null, <-- players to queue up their moves for each battle turn.
     //   player_one_prev: null,
-    //   player_two_prev: null, <-- the previous move that was executed.
+    //   player_two_prev: null, <-- The previous move that was executed.
     // }
 
     player_one: firstPlayer,
     player_two: secondPlayer,
     
-    player_one_deck: null, // deck is spirits they have, hand is spirits not in play
-    player_two_deck: null, // deck never changes, hand starts off as deck but cards are played (removed)
+    player_one_deck: null, // Deck is spirits they have, hand is spirits not in play.
+    player_two_deck: null, // Deck never changes, hand starts off as deck but cards are played (removed).
     
     player_one_hand: [],
     player_two_hand: [],
 
-    graveyard: {
-      spirits: [],
-      cooldowns: [],
-    },
+    graveyard: [],
   }
   return game;
 }
@@ -238,23 +234,30 @@ function validPosition(y, x) {
   return x >= 0 && x < BOARD_WIDTH && y >= 0 && y < BOARD_HEIGHT;  
 }
 
-// Given some 'tile<x,y>' this will return ['x,y', 'x', 'y']
-// Finds digits seperaterd by a comma inside some < >
+// Given some 'tile<x,y>' this will return ['x', 'y'] where x and y are numbers, not strings.
+// If a position [x, y] is passed in, it will just be returned unchanged.
 function tilePosition(tile) {
-  const pos_regex = /(?<=\<)(-*\d+),(-*\d+)(?=\>)/;
-  return tile.match(pos_regex);
+  if (typeof tile === 'string') {
+    const pos_regex = /(?<=\<)(-*\d+),(-*\d+)(?=\>)/;
+    const pos_raw = tile.match(pos_regex);
+    return [parseInt(pos_raw[1]), parseInt(pos_raw[2])];
+  } else {
+    return tile;
+  }
 }
 
 // Given a board and position, returns the type of the tile at that position.
+// If tile is a tile string, it's location will be parsed, otherwise it is assumed to be [x, y] form.
 function tileType(game, tile) {
   const pos = tilePosition(tile);
-  return game.tiles_board[pos[1]][pos[2]];
+  return game.tiles_board[pos[0]][pos[1]];
 }
 
 // Returns true if no spirits occupy the given tile and false otherwise.
+// If tile is a tile string, it's location will be parsed, otherwise it is assumed to be [x, y] form.
 function tileEmpty(game, tile) {
   const pos = tilePosition(tile);
-  return game.spirits_board[pos[1]][pos[2]] === '';
+  return game.spirits_board[pos[0]][pos[1]] === null;
 }
 
 // Returns true if (moving only horizontally and vertically) the second tile can be reached
@@ -264,55 +267,49 @@ function tileWithinDistance(tile_A, tile_B, distance, square) {
   const pos_A = tilePosition(tile_A);
   const pos_B = tilePosition(tile_B);
   if (square) {
-    return Math.max(Math.abs(pos_A[1] - pos_B[1]), Math.abs(pos_A[2] - pos_B[2])) <= distance;
+    return Math.max(Math.abs(pos_A[0] - pos_B[0]), Math.abs(pos_A[1] - pos_B[1])) <= distance;
   } else {
-    return Math.abs(pos_A[1] - pos_B[1]) + Math.abs(pos_A[2] - pos_B[2]) <= distance;
+    return Math.abs(pos_A[0] - pos_B[0]) + Math.abs(pos_A[1] - pos_B[1]) <= distance;
   }
 }
 
 // Mirrors a tile across the center of the board both vertically and horizontally.
 function mirrorTile(board, tile) {
   const pos = tilePosition(tile);
-  return `board-tile<${board.length - pos[1] - 1},${board[0].length - pos[2] - 1}>`;
+  return `board-tile<${board.length - pos[0] - 1},${board[0].length - pos[1] - 1}>`;
 }
 /* = TILE LOGIC HELPERS = */
 
 
 
 /* = SPIRIT LOGIC HELPERS = */
-// All spirit logic helpers which deal with the spirit tag take some spirit tag of the 
-// form 'spirit(player_id)[seed]<board_pos>:hp' and return part of it. Behavior is unspecified
-// if the tag is invalid.
 
-// Return the spirit's seed as a string.
-function spiritSeed(spirit_id) {
-  const seed_regex = /(?<=\[)(.*?)(?=\])/; // Grabs everything between [ and ], not including [ and ]
-  return String(spirit_id.match(seed_regex)[0]);
+// Removes the spirit from its current position and sets its position to the destination tile.
+// If dest_tile is null, this is equivalent to removing the spirit from the board.
+function updateSpiritPosition(game, spirit, dest_tile) {
+  game.spirits_board[spirit.position[0]][spirit.position[1]] = null;
+  
+  if (dest_tile) {
+    const pos = tilePosition(dest_tile);
+    spirit.position = pos;
+    
+    game.spirits_board[pos[0]][pos[1]] = spirit;
+  } else {
+    spirit.position = null;
+  }
 }
 
-// Returns the spirit's owner's player id as a string.
-function spiritOwner(spirit_id) {
-  const player_regex = /(?<=\()(.*?)(?=\))/; // Grabs everything between ( and ), not including ( and )
-  return String(spirit_id.match(player_regex)[0]);
+// Returns the number of tiles that a spirit can move.
+function getSpiritSpeed(spirit) {
+  if (spirit.abilities.includes("Tank")) {
+    return 2;
+  }
+  if (spirit.abilities.includes("Speedster")) {
+    return 4;
+  } 
+  return 3;
 }
 
-// Returns the spirit's current HP parsed as an integer.
-function spiritHP(spirit_id) {
-  const hp_regex = /:\d+/ // Matches the part at the end of a spirit tag of the format :###
-  return parseInt(spirit_id.match(hp_regex)[0].slice(1));
-}
-
-// Creates a spirit tag with the provided parameters. Passing null or undefined for any of the
-// parameters result in the value in the provided spirit tag being used. If all are being replaced,
-// the 'spirit' parameter is irrelevant. Output format: spirit(player_id)[seed]<board_pos>:hp
-function getSpiritTag(spirit, player_id, seed, board_pos, hp) {
-  const _player_id = player_id || spiritOwner(spirit);
-  const _seed = seed || spiritSeed(spirit);
-  const _board_pos = board_pos || tilePosition(spirit)[0];
-  const _hp = hp || spiritHP(spirit);
-
-  return `spirit(${_player_id})[${_seed}]<${_board_pos}>:${_hp}`;
-}
 /* = SPIRIT LOGIC HELPERS = */
 
 
@@ -320,65 +317,68 @@ function getSpiritTag(spirit, player_id, seed, board_pos, hp) {
 /* = MISCELLANEOUS HELPERS = */
 // Recursive function that checks whether there is a valid path from the start tile to the end tile.
 // Takes into account the type of tiles the specific spirit can walk on, and the maximum distance.
-function hasValidPath(game, spirit, destination, distance) {
-  const pos_raw = tilePosition(spirit);
-  const pos = [parseInt(pos_raw[1]), parseInt(pos_raw[2])];
+function hasValidPath(game, spirit_tile, destination, abilities, distance) {
+  const pos = tilePosition(spirit_tile);
+  const dest_pos = tilePosition(destination);
 
-  return validRecurs(game, `board-tile<${pos[0] + 1},${pos[1]}>`, destination, spirit, 0, distance) ||
-    validRecurs(game, `board-tile<${pos[0] - 1},${pos[1]}>`, destination, spirit, 0, distance) ||
-    validRecurs(game, `board-tile<${pos[0]},${pos[1] + 1}>`, destination, spirit, 0, distance) ||
-    validRecurs(game, `board-tile<${pos[0]},${pos[1] - 1}>`, destination, spirit, 0, distance);
+  return pathHelper(game, [pos[0] + 1, pos[1]], dest_pos, abilities, 0, distance) ||
+    pathHelper(game, [pos[0] - 1, pos[1]], dest_pos, abilities, 0, distance) ||
+    pathHelper(game, [pos[0], pos[1] + 1], dest_pos, abilities, 0, distance) ||
+    pathHelper(game, [pos[0], pos[1] - 1], dest_pos, abilities, 0, distance);
 }
 
 // Helper for recursive function hasValidPath. Do not call directly.
-function validRecurs(game, curr, dest, spirit, depth, MAX_DEPTH) {
-  const pos = tilePosition(curr);
-  if (!validPosition(pos[1], pos[2])) {
+function pathHelper(game, pos, dest, abilities, depth, MAX_DEPTH) {
+  if (!validPosition(pos[0], pos[1]) || depth === MAX_DEPTH) {
     return false;
-  } else if (depth === MAX_DEPTH || !canWalkTile(game, curr, spirit) || !tileEmpty(game, curr)) {
-    return false;
-  } else if (curr === dest) {
-    return true;
-  } else {
-    const pos_raw = tilePosition(curr);
-    const pos = [parseInt(pos_raw[1]), parseInt(pos_raw[2])];
+  }
 
-    return validRecurs(game, `board-tile<${pos[0] + 1},${pos[1]}>`, dest, spirit, depth + 1, MAX_DEPTH) ||
-      validRecurs(game, `board-tile<${pos[0] - 1},${pos[1]}>`, dest, spirit, depth + 1, MAX_DEPTH) ||
-      validRecurs(game, `board-tile<${pos[0]},${pos[1] + 1}>`, dest, spirit, depth + 1, MAX_DEPTH) ||
-      validRecurs(game, `board-tile<${pos[0]},${pos[1] - 1}>`, dest, spirit, depth + 1, MAX_DEPTH);
+  // If the spirit can leap other spirits, then we don't need to check tileEmpty.
+  const emptyCheck = abilities.includes("Acrobatic") ? true : tileEmpty(game, pos);
+  // If the spirit can leap obstacle tiles, then we don't need to check canWalkTile.
+  const walkCheck = abilities.includes("Leaping") ? true : canWalkTile(game, pos, abilities);
+  
+  if (!walkCheck || !emptyCheck) {
+    return false;
+  } else if (pos[0] === dest[0] && pos[1] === dest[1]) {
+    // At the destination, we DO have to do the checks regardless, since
+    // spirits can't end up on a tile that is occupied or they can't walk on.
+    return tileEmpty(game, pos) && canWalkTile(game, pos, abilities);
+  } else {
+    return pathHelper(game, [pos[0] + 1, pos[1]], dest, abilities, depth + 1, MAX_DEPTH) ||
+      pathHelper(game, [pos[0] - 1, pos[1]], dest, abilities, depth + 1, MAX_DEPTH) ||
+      pathHelper(game, [pos[0], pos[1] + 1], dest, abilities, depth + 1, MAX_DEPTH) ||
+      pathHelper(game, [pos[0], pos[1] - 1], dest, abilities, depth + 1, MAX_DEPTH);
   }
 }
 /* MISCELLANEOUS HELPERS */
 
 
-/* ACTION FUNCTIONS */
-// Sets the occupant of the give tile to the given spirit.
-function setTileOccupant(game, tile, spirit) {
-  const pos = tilePosition(tile);
-  game.spirits_board[pos[1]][pos[2]] = spirit;
-}
 
+/* ACTION FUNCTIONS */
 // Moves a spirit from the given tile to the destination tile, provided that the destination
 // is within range and there is a valid path. For portals, also checks that the other end is unoccupied.
 // Returns true or false representing the success of the operation.
-function doSpiritMove(game, tile_curr, tile_dest, spirit) {
-  if (tileWithinDistance(tile_curr, tile_dest, 3) && hasValidPath(game, spirit, tile_dest, 3)) {
+function doSpiritMove(game, spirit, destination) {
+  const max = getSpiritSpeed(spirit);
+  if (tileWithinDistance(spirit.position, destination, max) && hasValidPath(game, spirit.position, destination, spirit.abilities, max)) {
     // We check distance even though hasValidPath will not exceed the distance since tileWithinDistance is
     // a cheaper check and if it returns false we don't need to bother with hasValidPath.
-    const type = tileType(game, tile_dest);
-    const seed = spiritSeed(spirit);
+    const type = tileType(game, destination);
     
-    let true_dest = tile_dest;
+    let true_dest = destination;
     if (type === 'portal') {
-      true_dest = mirrorTile(game.tiles_board, tile_dest);
+      true_dest = mirrorTile(game.tiles_board, destination);
       if (!tileEmpty(game, true_dest)) {
         return false;
       }
     }
 
-    setTileOccupant(game, tile_curr, '');
-    setTileOccupant(game, true_dest, getSpiritTag(spirit, game.turn, seed, tilePosition(true_dest)[0]));
+    if (type === 'water' && spirit.abilities.includes("Amphibious") && spirit.hp_boost === 0) {
+      spirit.hp_boost = spirit.HP * 0.25;
+    }
+
+    updateSpiritPosition(game, spirit, true_dest);
     return true;
   } else {
     return false;
@@ -387,17 +387,20 @@ function doSpiritMove(game, tile_curr, tile_dest, spirit) {
 
 // Returns true if the given tile is walkable by all spirits, or if the given spirit has the 
 // appropriate abilities to walk on that tile if it is a special tile (e.g. "Aquatic" for water tiles).
-function canWalkTile(game, tile, spirit) {
+function canWalkTile(game, tile, abilities) {
   const type = tileType(game, tile);
-  const spirit_obj = createRandomSpirit(spiritSeed(spirit));
 
   if (type === 'none' || type === 'p1-spawn' || type === 'p2-spawn') {
     return true;
   }
-  if (type === 'water' && (spirit_obj.abilities.includes(0) || spirit_obj.abilities.includes(7) || spirit_obj.abilities.includes(8))) {
+  if (type === 'water' && (abilities.includes("Electric") || abilities.includes("Aquatic") || 
+    abilities.includes("Amphibious") || abilities.includes("Flying") || abilities.includes("Octopus"))) {
     return true;
   } 
-  if (type === 'portal' && (spirit_obj.abilities.includes(9) || spirit_obj.abilities.includes(28))) {
+  if (type === 'portal' && (abilities.includes("Psychic") || abilities.includes("Esper"))) {
+    return true;
+  }
+  if (type === 'wall' && abilities.includes("Wraith")) {
     return true;
   }
   return false;
@@ -406,7 +409,7 @@ function canWalkTile(game, tile, spirit) {
 // Simulates one turn of a battle. Both player_one_move and player_two_move must not be
 // null. Returns a list with two items: the first is whether the first player was hit and
 // the second is whether the second player was hit.
-function doBattleTurn(battle) {
+function doBattleTurn(game, battle) {
   // We set these first, before even fleeing so that on flee the opponent
   // can see that their enemy selected to flee.
   battle.player_one_prev = battle.player_one_move;
@@ -418,145 +421,225 @@ function doBattleTurn(battle) {
     return [false, false];
   }
 
-  const random = function(min, max) { // Returns a random integer between min and max
-    return Math.max(min, Math.floor(Math.random() * max));
-  };
+  const starting_hp_1 = battle.player_one_spirit.current_hp;
+  const starting_hp_2 = battle.player_two_spirit.current_hp;
 
-  let spirit_1 = createRandomSpirit(spiritSeed(battle.player_one_spirit));
-  let spirit_1_HP = spiritHP(battle.player_one_spirit);
-  const starting_spirit_1_HP = spirit_1_HP;
-  let spirit_2 = createRandomSpirit(spiritSeed(battle.player_two_spirit));
-  let spirit_2_HP = spiritHP(battle.player_two_spirit);
-  const starting_spirit_2_HP = spirit_2_HP;
-
-  let spirit_1_DMG = random(spirit_1.ATK * 0.8, spirit_1.ATK * 1.2);
-  let spirit_2_DMG = random(spirit_2.ATK * 0.8, spirit_2.ATK * 1.2);
-
-  // If a spirit meditated last turn, they will deal extra damage this turn.
-  if (battle.player_one_prev === 'meditate') {
-    spirit_1_DMG *= 1.5;
-  }
-  if (battle.player_two_prev === 'meditate') {
-    spirit_2_DMG *= 1.5;
-  }
-
-  // If a spirit meditates, all incoming damage is reduced by half.
-  if (battle.player_one_move === 'meditate') {
-    spirit_2_DMG = spirit_2_DMG * 0.5;
-  }
-  if (battle.player_two_move === 'meditate') {
-    spirit_1_DMG = spirit_1_DMG * 0.5;
-  }
-
-  // Make sure we are dealing with integers only.
-  spirit_1_DMG = Math.ceil(spirit_1_DMG);
-  spirit_2_DMG = Math.ceil(spirit_2_DMG);
-
-  // If a spirit attempts to dodge, it has a chance to avoid all damage.
-  if (battle.player_one_move === 'dodge') {
-    const chance = (spirit_1.abilities.includes(5)) ? 0.6 : 0.5;
-    if (Math.random() < chance) {
-      spirit_2_DMG = 0;
-    }
-  }
-  if (battle.player_two_move === 'dodge') {
-    const chance = (spirit_2.abilities.includes(5)) ? 0.6 : 0.5;
-    if (Math.random() < chance) {
-      spirit_1_DMG = 0;
-    }
-  }
+  const res_1 = calcModifiersHelper(game, battle.player_one_spirit, battle.player_two_spirit, 
+    battle.player_one_move, battle.initiator === 'player_one');
+  const res_2 = calcModifiersHelper(game, battle.player_two_spirit, battle.player_one_spirit, 
+    battle.player_two_move, battle.initiator === 'player_two');
+  // res is [damage, incoming, direct]
 
   // Finally, we do damage calculations and update the HPs.
-  if (battle.player_one_move === 'attack') {
-    spirit_2_HP = Math.max(0, spirit_2_HP - spirit_1_DMG);
-  }
-  if (battle.player_two_move === 'attack') {
-    spirit_1_HP = Math.max(0, spirit_1_HP - spirit_2_DMG);
-  }
+  enactHealthChange(battle.player_one_spirit, res_1, res_2);
+  enactHealthChange(battle.player_two_spirit, res_2, res_1);
 
-  if (spirit_1_HP === 0 || spirit_2_HP === 0) {
+  if (battle.player_one_spirit.current_hp === 0 || battle.player_two_spirit.current_hp === 0) {
     battle.finished = true;
   }
 
-  // Clear the moves.
+  // Clear the moves and return the battle events.
   battle.player_one_move = null; battle.player_two_move = null;
-  
-  // Update the spirits and return the battle events.
-  battle.player_one_spirit = `${battle.player_one_spirit.split(':')[0]}:${spirit_1_HP}`;
-  battle.player_two_spirit = `${battle.player_two_spirit.split(':')[0]}:${spirit_2_HP}`;
-  return [spirit_1_HP !== starting_spirit_1_HP, spirit_2_HP !== starting_spirit_2_HP];
+  return [
+    battle.player_one_spirit.current_hp < starting_hp_1, 
+    battle.player_two_spirit.current_hp < starting_hp_2,
+  ];
 }
 
-// Adds the knocked out spirits to the graveyard. Also, if the spirit was
-// not knocked out, it's tag on the board is updated to ensure damage persists.
+// Helper function for doBattleTurn. Do not call directly!
+function enactHealthChange(spirit, res, enemy_res) {
+  let change = res[2] - (enemy_res[0] * res[1]);
+  // change = direct change - (enemy damage * incoming perct)
+
+  change -= spirit.hp_boost;
+  spirit.hp_boost = Math.max(0, Math.floor(spirit.hp_boost + change));
+
+  if (change < 0) {
+    spirit.current_hp += change;
+    // Make sure we are dealing with integers only, and hp is never negative.
+    spirit.current_hp = Math.max(0, Math.floor(spirit.current_hp));
+  }
+}
+
+// Helper function for doBattleTurn. Do not call directly!
+function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
+  // Damage is the amount of damage being outputed. The enemy will take damage*incoming
+  // damage, where incoming is some damage resistance less than 1. Damage is positive and subtracted from health.
+  let damage = 0;
+  let incoming = 1;
+  // Unlike damage, direct gets no multiplier but is added straight to health. Essentially it is all 
+  // the undodgeable / unmodifiable damage + heals, and it is subtracted from health (positive direct = heals, 
+  // negative direct = damage taken).
+  let direct = 0;
+
+  if (!initiator && spirit.abilities.includes("Defensive")) {
+    incoming *= 0.75;
+  }
+
+  if (spirit.abilities.includes("Tank")) {
+    incoming *= 0.25;
+  }
+  
+  if (enemy.abilities.includes("Plague")) {
+    direct -= Math.min(spirit.current_hp, spirit.HP * 0.05);
+  }
+
+  if (spirit.abilities.includes("Regenerating")) {
+    direct += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.01);
+    // The heal value here is lower than the turn based heal since battles tend
+    // to have several turns.
+  }
+
+  if (curr_move === 'attack') { /* -=====- ATTACK -=====- */
+    damage = spirit.abilities.includes("Wildcard") ? 
+      randInt(spirit.ATK * 0.8, spirit.ATK * 1.75) : randInt(spirit.ATK * 0.8, spirit.ATK * 1.2);
+
+    // If a spirit has damage modifiers, taken them into account and then clear them.
+    damage *= spirit.dmg_boost;
+    spirit.dmg_boost = 1;
+
+    if (initiator && spirit.abilities.includes("Aggresive")) {
+      damage *= 1.5;
+    }
+
+    if (spirit.abilities.includes("Amphibious") && tileType(game, spirit.position) === 'water') {
+      damage *= 1.5;
+    }
+
+  } else if (curr_move === 'meditate') { /* -=====- MEDITATE -=====- */
+    // If a spirit meditates, all incoming damage is reduced by half...
+    incoming *= spirit.abilities.includes("Enlightened") ? 0.75 : 0.5;
+    // ...and the next attack will do increased damage.
+    spirit.dmg_boost = 1.5;
+
+    if (spirit.abilities.includes("Divine")) {
+      direct += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.05);
+    }
+
+  } else if (curr_move === 'dodge') { /* -=====- DODGE -=====- */
+    // If a spirit attempts to dodge, it has a chance to avoid all damage.
+    let chance = 0.5;
+    if (spirit.abilities.includes("Evasive")) {
+      chance += 0.15;
+    }
+    if (spirit.abilities.includes("Wraith")) {
+      chance += 0.15;
+    }
+    if (enemy.abilities.includes("Accuracy")) {
+      chance -= 0.2;
+    }
+    if (Math.random() < chance) {
+      incoming = 0;
+
+      if (spirit.abilities.includes("Martial Artist")) {
+        spirit.dmg_boost = 1.75;
+      }
+    }
+  }
+
+  return [damage, incoming, direct];
+}
+
+// Adds the knocked out spirits to the graveyard. Also, if the spirit was  knocked out, 
+// updates it's tag on the board is updated to ensure damage persists. Finally, handles
+// kill related effects.
 function addToGraveyard(game, battle) {
-  addToGraveyardHelper(game, battle.player_one_spirit);
-  addToGraveyardHelper(game, battle.player_two_spirit);
+  const died_1 = addToGraveyardHelper(game, battle.player_one_spirit);
+  const died_2 = addToGraveyardHelper(game, battle.player_two_spirit);
+
+  if (died_1 && !died_2) {
+    handleKillEffects(game, battle.player_two_spirit);
+  }
+  if (died_2 && !died_1) {
+    handleKillEffects(game, battle.player_one_spirit);
+  }
+}
+
+function handleKillEffects(game, spirit) {
+  if (spirit.abilities.includes("Rampage")) {
+    if (!spirit.effects["Rampage"]) {
+      spirit.effects["Rampage"] = {
+        effect: "Rampage",
+        kills: 0,
+        dmg_boost: 0,
+      };
+    }
+    spirit.effects["Rampage"].kills++;
+    spirit.effects["Rampage"].dmg_boost += 1.5;
+  }
+
+  // Refresh object, otherwise weird things happen?
+  game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
 }
 
 // Helper function for addToGraveyard. Do not call directly.
+// Returns true on spirit death and false otherwise.
 function addToGraveyardHelper(game, spirit) {
-  if (spiritHP(spirit) === 0) {
-    game.graveyard.spirits.push(spirit);
-    game.graveyard.cooldowns.push(20);
+  if (spirit.current_hp === 0) {
+    game.graveyard.push(spirit);
+    spirit.cooldown = 25 - spirit.SPD;
     
-    setTileOccupant(game, spirit, '');
+    updateSpiritPosition(game, spirit, null);
+    return true;
   } else {
-    setTileOccupant(game, spirit, spirit);
+    return false;
   }
 }
 
-// TODO: rework how the graveyard works. Atm, the remove call
-// on the cooldown will have issues if two spirits have the same cooldown value, potentially?
-// ig they would both get removed, still sus...
+// Updates the cooldown values of each spirit in the graveyard. If their cooldown reaches
+// zero, they are added to their owners hand.
 function updateGraveyard(game) {
-  for (let i = 0; i < game.graveyard.spirits.length; i++) {
-    let cooldown = game.graveyard.cooldowns[i];
-    if (cooldown === 0) {
-      const spirit = game.graveyard.spirits[i];
-      remove(game.graveyard.spirits, spirit);
-      remove(game.graveyard.cooldowns, cooldown);
+  for (let i = 0; i < game.graveyard.length; i++) {
+    const spirit = game.graveyard[i];
+    if (spirit.cooldown === 1) {
+      remove(game.graveyard, spirit);
       
-      const owner = spiritOwner(spirit);
-      const seed = spiritSeed(spirit);
-      if (owner === game.player_one) {
-        game.player_one_hand.push(seed);
-      } else if (owner === game.player_two) {
-        game.player_two_hand.push(seed);
+      if (spirit.owner === game.player_one) {
+        game.player_one_hand.push(spirit.seed);
+      } else if (spirit.owner === game.player_two) {
+        game.player_two_hand.push(spirit.seed);
       }
       
     } else {
-      game.graveyard.cooldowns[i] -= 1;
+      spirit.cooldown -= 1;
     }
   }
-  console.log("===\nCURRENT GRAVEYARD: ", game.graveyard);
+  console.log("\nCURRENT GRAVEYARD:\n", game.graveyard);
 }
 
 // Changes the turn of the game to the player whose turn it is currently not.
+// Also handles the logic for some turn based abilities such as regeneration.
 function turnChange(game) {
+  updateGraveyard(game);
+
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
       const spirit = game.spirits_board[y][x];
-      if (spirit !== '') {
-        const spirit_obj = createRandomSpirit(spiritSeed(spirit));
-        let updated_tag = spirit;
+      if (spirit) {
 
-        if (spirit_obj.abilities.includes(2)) {
-          let hp = spiritHP(spirit);
-          if (hp < spirit_obj.HP) {
-            hp += Math.min(spirit_obj.HP - hp, spirit_obj.HP * 0.05);
+        spirit.permanent_dmg_boost = 1;
+        for (const effect in spirit.effects) {
+          if (spirit.effects[effect].dmg_boost) {
+            spirit.permanent_dmg_boost = spirit.permanent_dmg_boost + spirit.effects[effect].dmg_boost;
           }
-          updated_tag = getSpiritTag(spirit, null, null, null, hp);
         }
 
-        game.spirits_board[y][x] = updated_tag;
+        if (spirit.abilities.includes("Regenerating")) {
+          if (spirit.current_hp < spirit.HP) {
+            spirit.current_hp += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.1);
+          }
+        }
+
+        // Refresh object, otherwise weird things happen?
+        game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
       }
     }
   }
 
   game.turn = (game.turn === game.player_one) ? game.player_two : game.player_one;
-  updateGraveyard(game);
 }
+
+
 
 /* ===== ========== ===== */
 /* END GAME LOGIC SECTION */
@@ -623,7 +706,7 @@ io.on('connection', (socket) => {
   // Should be called by the client upon recieving the callback
   // from 'start-game'. Used to update the lobby's game object.
   socket.on('provide-deck', (deck, lobby_id) => {
-    /*DEBUG*/ console.log(socket.id + " > Provided deck for game init");
+    /*DEBUG*/ console.log(socket.id + " > Providing deck for game init");
 
     const lobby = lobbies[lobby_id];
     if (!validLobby(lobby)) {
@@ -633,14 +716,10 @@ io.on('connection', (socket) => {
     const game = lobby.game;
     if (game.player_one === socket.id) {
       game.player_one_deck = fakeDeepCopy(deck);
-      stringifyList(game.player_one_deck);
       game.player_one_hand = fakeDeepCopy(deck);
-      stringifyList(game.player_one_hand);
     } else if (game.player_two === socket.id) {
       game.player_two_deck = fakeDeepCopy(deck);
-      stringifyList(game.player_two_deck);
       game.player_two_hand = fakeDeepCopy(deck);
-      stringifyList(game.player_two_hand);
     }
 
     // Once we have both player's decks, we can reply with the initial game state.
@@ -665,18 +744,13 @@ io.on('connection', (socket) => {
     }
     
     // First, we figure out if this is a spirit being deployed from the players hand, 
-    // or simply moving on the board. We don't just call tilePosition() a undeployed
-    // spirit has nothing between the <>, so the function would error.
-    
-    const pos_regex = /(?<=\<)(.*?)(?=\>)/; // Grabs everything between < and >, not including < and >
-    const pos = spirit.match(pos_regex)[0];
+    // or simply moving on the board. Tiles in the players hand have a position of null.
 
-    if (pos !== '') {
+    if (spirit.position) {
       // This means the spirit is on the board. The next step is therefore
       // to check if the move is valid, e.g. within range & to a walkable tile.
 
-      const spirit_tile = `board-tile<${pos}>`;
-      if (doSpiritMove(game, spirit_tile, tile, spirit)) {
+      if (doSpiritMove(game, spirit, tile)) {
         turnChange(game);
         io.in(lobby_id).emit('turn-update', game);
       }
@@ -691,7 +765,7 @@ io.on('connection', (socket) => {
       }
 
       // Now we must make sure the spirit is actually in their hand
-      const seed = spiritSeed(spirit);
+      const seed = spirit.seed;
       if (hand.includes(seed)) {
         remove(hand, seed);
 
@@ -700,11 +774,12 @@ io.on('connection', (socket) => {
 
         // Spirits can only be played to the spawn tiles and those tiles must be empty.
         if (tile_type === required && tileEmpty(game, tile)) {
-          setTileOccupant(game, tile, getSpiritTag(spirit, game.turn, seed, tilePosition(tile)[0]));
+          const pos = tilePosition(tile);
 
-          /* ABILITY: MOMENTUM */
-          const spirit_obj = createRandomSpirit(spiritSeed(spirit));
-          if (!spirit_obj.abilities.includes(23)) {
+          game.spirits_board[pos[0]][pos[1]] = spirit;
+          spirit.position = pos;
+
+          if (!spirit.abilities.includes("Momentum")) {
             turnChange(game);
           }
 
@@ -728,20 +803,10 @@ io.on('connection', (socket) => {
     }
 
     // First, we figure out if either spirit is not on the board, in which case
-    // this would be an invalid battle.
-    
-    const pos_regex = /(?<=\<)(.*?)(?=\>)/; // Grabs everything between < and >, not including < and >
-    
-    const spirit_pos = spirit.match(pos_regex)[0];
-    const enemy_pos = enemy.match(pos_regex)[0];
+    // this would be an invalid battle. Secondly we need to ensure the player 
+    // isn't trying to battle their own spirit on accident.
 
-    // Secondly we need to ensure the player isn't trying to battle their
-    // own spirit on accident.
-
-    const enemy_owner = spiritOwner(enemy);
-
-    if (spirit_pos === '' || enemy_pos === '' || enemy_owner === socket.id) {
-      /*DEBUG*/ console.log("RETURN > Spirit or enemy is not on the board");
+    if (spirit.position === null || enemy.position === null || enemy.owner === socket.id) {
       return;
     }
 
@@ -749,14 +814,13 @@ io.on('connection', (socket) => {
       let update_type = 'turn-update';
 
       outerloop:
-      if (!tileWithinDistance(spirit, enemy, 1, true)) {
-        const enemy_pos_ = enemy_pos.split(',');
+      if (!tileWithinDistance(spirit.position, enemy.position, 1, true)) {
+        const max = getSpiritSpeed(spirit);
         for (let x = -1; x <= 1; x++) {
           for (let y = -1; y <= 1; y++) {
-            const tile_dest = `board-tile<${parseInt(enemy_pos_[0]) + x},${parseInt(enemy_pos_[1]) + y}>`;
-            if (hasValidPath(game, spirit, tile_dest, 3)) {
-              doSpiritMove(game, `board-tile<${spirit_pos}>`, tile_dest, spirit);
-              spirit = getSpiritTag(spirit, null, null, tile_dest, null);
+            const tile_dest = `board-tile<${enemy.position[0] + x},${enemy.position[1] + y}>`;
+            if (hasValidPath(game, spirit.position, tile_dest, spirit.abilities, max)) {
+              doSpiritMove(game, spirit, tile_dest);
               update_type = 'turn-update:battle+move';
               break outerloop;
             }
@@ -764,7 +828,7 @@ io.on('connection', (socket) => {
         }
       }
 
-      if (tileWithinDistance(spirit, enemy, 1, true)) {
+      if (tileWithinDistance(spirit.position, enemy.position, 1, true)) {
         const initiator = (game.player_one === socket.id) ? 'player_one' : 'player_two';
 
         game.battle = {
@@ -802,7 +866,7 @@ io.on('connection', (socket) => {
 
       // If both players have made their moves, we can start do the turn logic.
       if (game.battle.player_one_move && game.battle.player_two_move) {
-        const events = doBattleTurn(game.battle);
+        const events = doBattleTurn(game, game.battle);
         if (game.battle.finished) {
           addToGraveyard(game, game.battle);
         }

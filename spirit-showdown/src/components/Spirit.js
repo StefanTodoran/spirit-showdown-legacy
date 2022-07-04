@@ -1,5 +1,5 @@
 import {Component} from 'react';
-import { ability_descriptions, ability_names } from '../assets/abilities.js';
+import { ability_descriptions } from '../assets/abilities.js';
 import './Components.css';
 
 export default class Spirit extends Component {
@@ -48,7 +48,7 @@ export default class Spirit extends Component {
     for (let i = 0; i < this.props.spirit.abilities.length; i++) {
       abilities.push(
         <p>
-          <strong>{ability_names[this.props.spirit.abilities[i]]}</strong><br/>
+          <strong>{this.props.spirit.abilities[i]}</strong><br/>
           {ability_descriptions[this.props.spirit.abilities[i]]}
         </p>
       );
@@ -60,12 +60,12 @@ export default class Spirit extends Component {
         <section className='card cover-card'>
           <br/><br/>
           <h2>{this.props.spirit.name}</h2>
-          <h3>({this.props.spirit.tier} tier)</h3>
+          <h3>({this.props.spirit.tier} tier){this.props.spirit.type && (" (" + this.props.spirit.type + " type)")}</h3>
           {abilities}
           <p>
             <span><strong>HP:&nbsp;</strong>{this.props.spirit.HP}</span>
             <span><strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}</span>
-            <span><strong>Priority:&nbsp;</strong>{this.props.spirit.priority}</span>
+            <span><strong>SPD:&nbsp;</strong>{this.props.spirit.speed}</span>
             <br/>
           </p>
         </section>

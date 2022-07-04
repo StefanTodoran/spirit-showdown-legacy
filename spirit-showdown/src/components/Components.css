@@ -26,7 +26,7 @@
   z-index: 10;
 }
 
-/* SpiritTile selection styles */
+/* SpiritTile selection and death styles */
 
 .selectable, .selected {
   transition: transform 0.2s;
@@ -47,6 +47,30 @@
   border: 3px solid black;
   margin: 8px 10px;
   transform: translateY(-5px);
+}
+
+.deck.dead {
+  cursor: auto;
+  border: 1px solid rgba(100, 100, 100, 0.5);
+  border-radius: 5px;
+}
+
+.deck.dead::after {
+  content: var(--cooldown, "0");
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: large;
+  font-weight: bold;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  background-color: rgba(100, 100, 100, 0.5);
 }
 
 /* ================================= */
@@ -278,4 +302,60 @@ want hovering it to count so we set pointer events to none. */
 
 .flashing-sprite .sprite-pixel {
   animation: on_off .25s infinite;
+}
+
+#attack-button:hover {
+  animation: red-glint 2s infinite;
+}
+
+#meditate-button:hover {
+  animation: green-glint 2s infinite;
+}
+
+#dodge-button:hover {
+  animation: yellow-glint 2s infinite;
+}
+
+@keyframes red-glint {
+  0% {
+    border: auto;
+    background-color: auto;
+  }
+  50% {
+    border-color: #ebb6a9;
+    background-color: #f7ded8;
+  }
+}
+
+@keyframes green-glint {
+  0% {
+    border: auto;
+    background-color: auto;
+  }
+  50% {
+    border-color: #b0df90;
+    background-color: #dcf8cf;
+  }
+}
+
+@keyframes yellow-glint {
+  0% {
+    border: auto;
+    background-color: auto;
+  }
+  50% {
+    border-color: #dfd790;
+    background-color: #f8f5cf;
+  }
+}
+
+.spirit-stats {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 15px;
+}
+
+.spirit-stats p {
+  margin: 0;
 }

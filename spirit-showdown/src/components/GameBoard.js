@@ -1,41 +1,31 @@
 import { Component } from "react";
 import BoardTile from "./BoardTile";
 import './Components.css';
-import { createRandomSpirit } from '../spiritGeneration';
 
 export default class GameBoard extends Component {
+  onComponentWillRecieveProps(nextProps) {
+    console.log(this.props.tiles_board);
+    console.log(this.props.spirits_board);
+  }
+
   render() {
     const board = [];
     for (let i = 0; i < this.props.tiles_board.length; i++) {
       const row = [];
       for (let j = 0; j < this.props.tiles_board[i].length; j++) {
-        let spirit = null;
-        let enemy = null;
+        const spirit = this.props.spirits_board[i][j];
+        const enemy = (spirit) ? spirit.owner !== this.props.player : false;
 
-        const contents = this.props.spirits_board[i][j]; // tile's spirit board contents
-        const hasSpirit = contents !== '';
-        if (hasSpirit) {
-          const seed_regex = /(?<=\[)(.*?)(?=\])/; // Grabs everything between [ and ], not including [ and ]
-          const player_regex = /(?<=\()(.*?)(?=\))/; // Grabs everything between ( and ), not including ( and )
-
-          const seed = contents.match(seed_regex)[0];
-          const player = contents.match(player_regex)[0];
-          spirit = createRandomSpirit(seed);
-
-          enemy = (player !== this.props.player);
-        }
-
-        const id = (hasSpirit) ? contents : `board-tile<${i},${j}>`;
-        const selected = (hasSpirit) ? this.props.selectedSpirit === contents : this.props.selectedTile === id;
-        const callback = (hasSpirit) ? this.props.selectSpiritCallback : this.props.selectTileCallback;
+        const id = (spirit) ? spirit : `board-tile<${i},${j}>`;
+        const selected = (spirit) ? this.props.selectedSpirit === id : this.props.selectedTile === id;
+        const callback = (spirit) ? this.props.selectSpiritCallback : this.props.selectTileCallback;
 
         row.push(
           <BoardTile
-            key={id} id={id}
+            key={`board-tile<${i},${j}>`} id={id} selectCallback={callback}
             type={this.props.tiles_board[i][j]} flipped={this.props.flipped}
             pos={[i, j]} max={[this.props.tiles_board[i].length, this.props.tiles_board.length]}
-            spirit={spirit} enemy={enemy} selected={selected} spirit_tag={contents}
-            selectCallback={callback} 
+            spirit={spirit} enemy={enemy} selected={selected}
           />
         );
       }

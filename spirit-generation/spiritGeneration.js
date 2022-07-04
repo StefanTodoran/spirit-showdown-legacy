@@ -1,5 +1,5 @@
 import { GetColorName } from 'hex-color-to-color-name';
-import { num_abilities } from './assets/abilities.js';
+import { type_ability_names, neutral_ability_names } from './assets/abilities.js';
 import { healthWords, attackWords, lowTierWords, highTierWords } from './assets/words.js';
 
 function sfc32(a, b, c, d) {
@@ -66,12 +66,65 @@ function fakeDeepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+function rgbToHsl(red, grn, blu) {
+  let r = red / 255;
+  let g = grn / 255;
+  let b = blu / 255;
+
+  let max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max == min) {
+    h = s = 0; // achromatic
+  } else {
+    let d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+
+    h /= 6;
+  }
+
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
+function getHueType(hsl) {
+  const HUES_TABLE = [
+    {low: 0, high: 15, value: "Blood"},
+    {low: 20, high: 35, value: "Pyromaniac"},
+    {low: 55, high: 65, value: "Power"},
+    {low: 90, high: 135, value: "Nature"},
+    {low: 140, high: 155, value: "Toxic"},
+    {low: 170, high: 240, value: "Marine"},
+    {low: 255, high: 285, value: "Paranormal"},
+    {low: 290, high: 330, value: "Enchanted"},
+  ];
+  
+  for (let i = 0; i < HUES_TABLE.length; i++) {
+    const range = HUES_TABLE[i];
+    if (hsl[0] >= range.low && hsl[0] <= range.high) {
+      // This means it is in the proper hue range, but
+      // we also need to check that the saturation or
+      // lightness aren't too low.
+      if (hsl[1] > 40 && hsl[2] > 40) {
+        return range.value;
+      }
+    }
+  }
+  
+  return null;
+}
+
 export function createRandomSpirit(seed) {
   /* Let's define some properties of spirits! */
 
   const TIER_LIST = ["F", "D", "C", "B", "A", "S"]; 
   const MAX_LEVEL = TIER_LIST.length; // 6
-  const PRIORITY_LIST = ["Last", "Uber Slow", "Slow", "Normal", "Quick", "Fast", "Uber Fast"];
+  const SPEEDS_LIST = ["Last", "Uber Slow", "Slow", "Normal", "Quick", "Fast", "Uber Fast"];
   const MAX_ABILITIES = [1, 2, 3, 3, 3, 4];
   
   /* [===== ========================== =====] */
@@ -88,45 +141,8 @@ export function createRandomSpirit(seed) {
   const level = Math.floor((rand() ** 3) * MAX_LEVEL) + 1;
   const tier = TIER_LIST[level - 1];
 
-  /* [===== ========= =====] */
-  /* Spirit stats generation */
-
-  // Multiply by random(x, y) for some variance in points, the numbers are arbitrary.
-  let points = random(80, 120) * (level + (MAX_LEVEL / 3));
-  let HP = 0; let ATK = 0;
-  while (points > 0) {
-    const amount = random(1, Math.max(5, Math.floor(points / 3))); // Seems to increase randomness of stat spread...
-    if (rand() < 0.7) { // 0.7 is arbitrary, but we want generally want HP >> ATK to avoid one-shotting.
-      HP += amount;
-    } else {
-      ATK += amount;
-    }
-    points -= amount;
-  }
-
-  let priority = 0;
-  for (let i = 0; i < level; i++) {
-    priority = Math.max(priority, Math.floor((rand() ** 2) * PRIORITY_LIST.length));
-  }
-
-  // The chance of getting an ability starts off high and decreases with each ability gained.
-  // Each tier or level has a maximum number of abilities. Each level equals a chance to get an ability.
-  const abilities = [];
-  let chance = 0.8;
-  for (let i = 0; i < level; i++) {
-    if (abilities.length < MAX_ABILITIES[level - 1] && rand() < chance) {
-      const new_ability = random(0, num_abilities);
-      if (!abilities.includes(new_ability)) {
-        abilities.push(new_ability);
-        chance *= 0.8;
-      } else {
-        i--; // If it would be a duplicate, try again.
-      }
-    }
-  }
-
-  /* [===== ======= =====] */
-  /* Random color creation */
+  /* [===== =========================== =====] */
+  /* Random color and associated type creation */
 
   // First, we define a function that returns a number between 52 and 256.
   // This is one r, g or b component of a color. Min is 52 arbitrarily, just worked out.
@@ -145,6 +161,59 @@ export function createRandomSpirit(seed) {
 
   const lightColor = "#" + compToHex(r) + compToHex(g) + compToHex(b);
   const darkColor = "#" + compToHex(dr) + compToHex(dg) + compToHex(db);
+
+  const hsl = rgbToHsl(r, g, b);
+  let type = getHueType(hsl);
+  if (hsl[2] < 30 && !type) {
+    type = "Dark";
+  }
+
+  console.log(hsl);
+
+  /* [===== ========= =====] */
+  /* Spirit stats generation */
+
+  // Multiply by random(x, y) for some variance in points, the numbers are arbitrary.
+  let points = random(80, 120) * (level + (MAX_LEVEL / 3));
+  let HP = 0; let ATK = 0;
+  while (points > 0) {
+    const amount = random(1, Math.max(5, Math.floor(points / 3))); // Seems to increase randomness of stat spread...
+    if (rand() < 0.6) { // 0.6 is arbitrary, but we want generally want HP >> ATK to avoid one-shotting.
+      HP += amount;
+    } else {
+      ATK += amount;
+    }
+    points -= amount;
+  }
+
+  let speed = 0;
+  for (let i = 0; i < level; i++) {
+    speed = Math.max(speed, Math.floor((rand() ** 2) * SPEEDS_LIST.length));
+  }
+
+  // The chance of getting an ability starts off high and decreases with each ability gained.
+  // Each tier or level has a maximum number of abilities. Each level equals a chance to get an ability.
+  // Any spirit can get neutral abilities, but typed abilities are exclusive. Typed spirits get a 
+  // type-specific ability guaranteed.
+  const abilities = [];
+  const specific = (type) ? type_ability_names[type] : [];
+  if (type) {
+    abilities.push(specific[random(0, specific.length)]);
+  }
+  const pool = neutral_ability_names.concat(specific);
+  
+  let chance = 0.8;
+  for (let i = 0; i < level; i++) {
+    if (abilities.length < MAX_ABILITIES[level - 1] && rand() < chance) {
+      const new_ability = pool[random(0, pool.length)];
+      if (!abilities.includes(new_ability)) {
+        abilities.push(new_ability);
+        chance *= 0.8;
+      } else {
+        i--; // If it would be a duplicate, try again.
+      }
+    }
+  }
 
   /* [===== ============================ =====] */
   /* Sprite array creation process starts here: */
@@ -251,8 +320,9 @@ export function createRandomSpirit(seed) {
 
     HP: HP,
     ATK: ATK,
-    priority: PRIORITY_LIST[priority],
-    PRIO: priority,
+    speed: SPEEDS_LIST[speed],
+    SPD: speed,
+    type: type,
     abilities: abilities,
 
     sprite: fakeDeepCopy(sprite),

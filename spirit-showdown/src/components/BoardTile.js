@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { ability_descriptions, ability_names } from '../assets/abilities.js';
+import { ability_descriptions } from '../assets/abilities.js';
 import './Components.css';
 
 export default class BoardTile extends Component {
@@ -70,7 +70,8 @@ export default class BoardTile extends Component {
 
     const sprite = [];
     const abilities = [];
-    let spirit_HP;
+    const valid = [];
+    let boost = null;
     if (this.props.spirit) {    
       // build up the sprite from the array tile by tile
       for (let i = 0; i < this.props.spirit.sprite.length; i++) {
@@ -86,40 +87,41 @@ export default class BoardTile extends Component {
       for (let i = 0; i < this.props.spirit.abilities.length; i++) {
         abilities.push(
           <p>
-            <strong>{ability_names[this.props.spirit.abilities[i]]}</strong><br />
+            <strong>{this.props.spirit.abilities[i]}</strong><br />
             {ability_descriptions[this.props.spirit.abilities[i]]}
           </p>
         );
       }
 
-      const hp_regex = /:\d+/ // Matches the part at the end of a spirit tag of the format :###
-      spirit_HP = parseInt(this.props.spirit_tag.match(hp_regex)[0].slice(1));
-    }
-
-    const valid = [];
-    if (!this.props.enemy && this.props.selected) {
-      const maxDist = 3;
-      for (let x = -maxDist; x < maxDist + 1; x++) {
-        for (let y = -maxDist; y < maxDist + 1; y++) {
-          if (!(x === 0 && y === 0) && (Math.abs(x) + Math.abs(y) <= maxDist)) {
-            const selection = [this.props.pos[1] + x, this.props.pos[0] + y];
-            if (!(selection[0] < 0 || selection[1] < 0 || selection[0] >= this.props.max[0] || selection[1] >= this.props.max[1])) {
-              const digit = 2*(maxDist + 1 - (Math.abs(x) + Math.abs(y)));
-              const bgColor = `#000000${digit}${digit}`;
-              valid.push(
-                <div 
-                  className={(this.props.flipped) ? 'valid-move flipped' :'valid-move tile'} 
-                  key={`selection<${x},${y}>`} style={{
-                    '--xdistance': x, '--ydistance': y,
-                    ...( { backgroundColor: bgColor }),
-                  }}
-                />
-              );
+      if (!this.props.enemy && this.props.selected) {
+        const maxDist = 
+          this.props.spirit.abilities.includes('Speedster') ? 4 :
+          this.props.spirit.abilities.includes('Tank') ? 2 : 3;
+        for (let x = -maxDist; x < maxDist + 1; x++) {
+          for (let y = -maxDist; y < maxDist + 1; y++) {
+            if (!(x === 0 && y === 0) && (Math.abs(x) + Math.abs(y) <= maxDist)) {
+              const selection = [this.props.pos[1] + x, this.props.pos[0] + y];
+              if (!(selection[0] < 0 || selection[1] < 0 || selection[0] >= this.props.max[0] || selection[1] >= this.props.max[1])) {
+                const digit = 2*(maxDist + 1 - (Math.abs(x) + Math.abs(y)));
+                const bgColor = `#000000${digit}${digit}`;
+                valid.push(
+                  <div 
+                    className={(this.props.flipped) ? 'valid-move flipped' :'valid-move tile'} 
+                    key={`selection<${x},${y}>`} style={{
+                      '--xdistance': x, '--ydistance': y,
+                      ...( { backgroundColor: bgColor }),
+                    }}
+                  />
+                );
+              }
             }
           }
         }
       }
+
+      boost = this.props.spirit.dmg_boost * this.props.spirit.permanent_dmg_boost;
     }
+
     
     return (
       <div 
@@ -143,11 +145,14 @@ export default class BoardTile extends Component {
                 {abilities}
                 <p>
                   <span><strong>HP:&nbsp;</strong>{this.props.spirit.HP}</span>
-                  <span><strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}</span>
-                  <span><strong>Priority:&nbsp;</strong>{this.props.spirit.priority}</span>
+                  <span>
+                    <strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}
+                    {boost !== 1 && <>&nbsp;(x{boost})</>}
+                  </span>
+                  <span><strong>SPD:&nbsp;</strong>{this.props.spirit.speed}</span>
                   <br />
                 </p>
-                <div className="health-bar horizontal" style={{'--fill': (spirit_HP/this.props.spirit.HP)}}/>
+                <div className="health-bar horizontal" style={{'--fill': (this.props.spirit.current_hp/this.props.spirit.HP)}}/>
                 <br/>
               </section>
             {valid}

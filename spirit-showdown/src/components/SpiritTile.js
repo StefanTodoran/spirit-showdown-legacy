@@ -1,10 +1,12 @@
 import { Component } from 'react';
-import { ability_descriptions, ability_names } from '../assets/abilities.js';
+import { ability_descriptions } from '../assets/abilities.js';
 import './Components.css';
 
 export default class SpiritTile extends Component {
   handleClick = () => {
-    this.props.selectCallback(this.props.id);
+    if (!this.props.dead) {
+      this.props.selectCallback(this.props.spirit);
+    }
   }
 
   render() {
@@ -49,14 +51,16 @@ export default class SpiritTile extends Component {
     for (let i = 0; i < this.props.spirit.abilities.length; i++) {
       abilities.push(
         <p>
-          <strong>{ability_names[this.props.spirit.abilities[i]]}</strong><br />
+          <strong>{this.props.spirit.abilities[i]}</strong><br />
           {ability_descriptions[this.props.spirit.abilities[i]]}
         </p>
       );
     }
 
+    const class_name = this.props.selected ? 'deck selected' : this.props.dead ? 'deck selectable dead' : 'deck selectable';
     return (
-      <div className={this.props.selected ? 'deck selected' : 'deck selectable'} onClick={this.handleClick}>
+      <div className={class_name} onClick={this.handleClick} 
+        style={{...(this.props.dead ? {"--cooldown": `"${this.props.spirit.cooldown}"`} : {})}}>
         {sprite}
         <section className='card hover-card'>
           <br/>
@@ -66,7 +70,7 @@ export default class SpiritTile extends Component {
           <p>
             <span><strong>HP:&nbsp;</strong>{this.props.spirit.HP}</span>
             <span><strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}</span>
-            <span><strong>Priority:&nbsp;</strong>{this.props.spirit.priority}</span>
+            <span><strong>SPD:&nbsp;</strong>{this.props.spirit.speed}</span>
             <br />
           </p>
         </section>
