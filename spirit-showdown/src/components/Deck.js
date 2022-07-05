@@ -20,7 +20,6 @@ export default class Deck extends Component {
       dmg_boost: 1, // this is a multiplier on damage
     
       permanent_dmg_boost: 1,
-      // permanent_hp_boost: 1,
       effects: {},
     }
   }

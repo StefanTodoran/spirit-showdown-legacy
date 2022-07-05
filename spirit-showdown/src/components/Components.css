@@ -353,9 +353,43 @@ want hovering it to count so we set pointer events to none. */
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  position: relative;
   padding: 0 15px;
 }
 
 .spirit-stats p {
   margin: 0;
+}
+
+.popping-number {
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+  font-size: x-large;
+  z-index: 1;
+
+  animation: pop-and-fall 0.75s cubic-bezier(.51,-0.69,1,.55) infinite;
+  /* animation: pop-and-fall 1s cubic-bezier(.71,-0.91,1,.63) infinite; */
+  /* animation: pop-and-fall 1s cubic-bezier(.53,-0.01,.51,1) infinite; */
+}
+
+.popping-number.damage {
+  color: #e66464;
+  text-shadow: 0px 0px 2px #f1abab;
+}
+
+.popping-number.heal {
+  color: #7ee664;
+  text-shadow: 0px 0px 2px #b3f1ab;
+}
+
+@keyframes pop-and-fall {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--horizontal), 500%) scale(0.5) rotate(calc(90deg * var(--rotation)));
+    opacity: 0;
+  }
 }

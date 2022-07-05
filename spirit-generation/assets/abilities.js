@@ -36,17 +36,17 @@ export const ability_names = {
   34:"Wraith",
   35:"Sushi Chef",
   36:"Octopus",
-  37:"Police Officer", // may not fit game vibe
-  38:"Romanian", // may not fit game vibe
-  39:"Tank",
-  40:"President",
-  41:"Enlightened",
-  42:"Princess",
-  43:"Speedster",
-  44:"Communist",
-  45:"Accuracy",
-  46:"Martial Artist",
-  47:"Arsonist",
+  37:"Tank",
+  38:"President",
+  39:"Enlightened",
+  40:"Princess",
+  41:"Speedster",
+  42:"Communist",
+  43:"Accuracy",
+  44:"Martial Artist",
+  45:"Arsonist",
+  46:"Demonic",
+  47:"",
 }
 
 export const num_abilities = Object.keys(ability_names).length;
@@ -62,7 +62,7 @@ export const type_ability_names = {
     "Electric", "Kamikaze", 
   ],
   "Nature": [
-    "Leaping", "Turtle", "Rooted", "Flying", "Octopus",
+    "Leaping", "Turtle", "Rooted", "Flying",
   ],
   "Toxic": [
     "Poisonous", "Plague", 
@@ -77,10 +77,10 @@ export const type_ability_names = {
     "Witchdoctor", "Esper", 
   ],
   // "Dark": [
-  //   "Revenge", "Plague", "Wildcard", 
+  //   "Revenge", "Plague", "Wildcard", "Demonic"
   // ],
   "Dark": [
-    "Acrobatic", "Leaping",
+    "Rampage", "Rage",
   ],
 }
 
@@ -135,14 +135,14 @@ export const ability_descriptions = {
   "Aquatic"       : "Spirit can walk on water tiles.", // IMPLEMENTED
   "Amphibious"    : "Spirit can walk on water tiles and gets an HP, & DMG boost in water.", // IMPLEMENTED
   "Psychic"       : "Spirit can use portal tiles.", // IMPLEMENTED
-  "Acrobatic"     : "Spirit can leapfrog over other spirits.",
+  "Acrobatic"     : "Spirit can leapfrog over other spirits.", // IMPLEMENTED
   "Warm-blooded"  : "Immunity to freeze.",
   "Leader"        : "Spirit gives HP and DMG boost to allies within 1 tile of it.", 
-  "Leaping"       : "Spirit can leap obstacle tiles as well as moving normally.",
+  "Leaping"       : "Spirit can leap obstacle tiles as well as moving normally.", // IMPLEMENTED
   "Arctic"        : "Upon getting KOed or KOing another spirit, enemy spirits with 2 tiles are frozen.", 
   "Flying"        : "Flying spirits can only attack, block, and be attacked by other flying spirits. Can also fly over water tiles.", // PARTIAL IMPLEMENTATION
   "Poisonous"     : "Each turn, enemy spirits within 2 tiles take damage.",
-  "Rampage"       : "Spirit gets a damage boost for every KO. Resets on death.",
+  "Rampage"       : "Spirit gets a damage boost for every KO. Resets on death.", // IMPLEMENTED
   "Revenge"       : "If ALL allied spirits are KOed and respawning, HP and DMG are massively increased.",
   "Kamikaze"      : "Upon death, ALL directly adjacent spirits die instantly.",
   "Swapper"       : "During the movement phase, spirit can swap places with any surrounding allied spirit.",
@@ -162,8 +162,6 @@ export const ability_descriptions = {
   "Wraith"        : "Dodge chance is increased. Can move through walls.", // IMPLEMENTED
   "Sushi Chef"    : "Spirit does massive damage to marine type spirits.",
   "Octopus"       : "Spirit can walk on water tiles and has increased attack range.", // PARTIAL IMPLEMENTATION
-  // "Police Officer": "Does massive damage to dark type spirits.",
-  // "Romanian"      : "Spirit has a chance to steal enemy abilities upon KOing them.",
   "Tank"          : "Incoming damage is halved. Movement range is reduced.",
   "President"     : "Spirit has unparalleled damage resistance and attack power. However upon death all allied spirits die as well.",
   "Enlightened"   : "Meditation damage boost is increased.", // IMPLEMENTED
@@ -172,5 +170,6 @@ export const ability_descriptions = {
   "Communist"     : "When combat is initiated, communist spirit's HP is set to be equal to enemy HP.",
   "Accuracy"      : "Enemy dodge chance reduced during combat.", // IMPLEMENTED
   "Martial Artist": "Successful dodges grant a damage boost.", // IMPLEMENTED
-  "Arsonist"      : "Gains a damage boost for every enemy succesfully burned.", // IMPLEMENTED
+  "Arsonist"      : "Gains a damage boost for every enemy succesfully burned.",
+  "Demonic"       : "Using portal tiles does not consume a turn.",
 }

@@ -144,10 +144,13 @@ export default class BoardTile extends Component {
                 <h3>({this.props.spirit.tier} tier)</h3>
                 {abilities}
                 <p>
-                  <span><strong>HP:&nbsp;</strong>{this.props.spirit.HP}</span>
+                  <span>
+                    <strong>HP:&nbsp;</strong>{this.props.spirit.HP}
+                    {this.props.spirit.hp_boost !== 0 && <>&nbsp;(<strong>+{this.props.spirit.hp_boost}</strong>)</>}
+                  </span>
                   <span>
                     <strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}
-                    {boost !== 1 && <>&nbsp;(x{boost})</>}
+                    {boost !== 1 && <>&nbsp;(<strong>x{boost}</strong>)</>}
                   </span>
                   <span><strong>SPD:&nbsp;</strong>{this.props.spirit.speed}</span>
                   <br />

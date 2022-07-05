@@ -57,6 +57,7 @@ export default class Spirit extends Component {
     return (
       <div className={(this.props.flashing) ? 'deck flashing-sprite' : 'deck'}>
         {sprite}
+        
         <section className='card cover-card'>
           <br/><br/>
           <h2>{this.props.spirit.name}</h2>

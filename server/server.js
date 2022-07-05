@@ -42,6 +42,16 @@ const tiles_boards = [
     ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
     ['wall','p1-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p1-spawn','wall',],
   ],
+  [
+    ['wall','water','water','water','p2-spawn','wall','wall','wall','wall','wall','wall','wall',],
+    ['portal','none','none','wall','none','none','none','none','none','none','none','wall',],
+    ['wall','none','none','none','none','water','none','none','wall','none','none','p2-spawn',],
+    ['wall','wall','none','none','none','water','water','none','none','wall','none','wall',],
+    ['wall','none','wall','none','none','water','water','none','none','none','wall','wall',],
+    ['p1-spawn','none','none','wall','none','none','water','none','none','none','none','wall',],
+    ['wall','none','none','none','none','none','none','none','wall','none','none','portal',],
+    ['wall','wall','wall','wall','wall','wall','wall','p1-spawn','water','water','water','wall',],
+  ],
 ];
 const spirits_board = [
   [null,null,null,null,null,null,null,null,null,null,null,null,],
@@ -310,6 +320,11 @@ function getSpiritSpeed(spirit) {
   return 3;
 }
 
+// Shorthand helper for calculating spirit health values, caps the 
+// provided value between 0 and spirit.HP, then rounds down to the nearest integer.
+function boundHealth(spirit, val) {
+  return Math.max(0, Math.min(spirit.HP, Math.floor(val)));
+}
 /* = SPIRIT LOGIC HELPERS = */
 
 
@@ -351,6 +366,41 @@ function pathHelper(game, pos, dest, abilities, depth, MAX_DEPTH) {
       pathHelper(game, [pos[0], pos[1] - 1], dest, abilities, depth + 1, MAX_DEPTH);
   }
 }
+
+// Used to update and intiantiate spirit effects. If the effect does not exist, it
+// will be created based on one of the template effect starters. Then the (prior 
+// existing or newly created) effect is returned to be manipulated. 
+function getEffect(spirit, effect) {
+  if (!spirit.effects[effect]) {
+    const templates = {
+      "Rampage": {
+        effect: "Rampage",
+        kills: 0,
+        dmg_boost: 0,
+      },
+      "Rage": {
+        effect: "Rage",
+        dmg_boost: 0,
+      },
+      "Cursed": {
+        effect: "Cursed",
+        duration: 3, // remaining turns
+      },
+      "Frozen": {
+        effect: "Frozen",
+        duration: 3,
+      },
+      "Burning": {
+        effect: "Burning",
+        duration: 8,
+        dmg: 0, // amount of damage taken per turn
+      },
+    }
+    spirit.effects[effect] = templates[effect];
+  }
+
+  return spirit.effects[effect];
+}
 /* MISCELLANEOUS HELPERS */
 
 
@@ -375,7 +425,7 @@ function doSpiritMove(game, spirit, destination) {
     }
 
     if (type === 'water' && spirit.abilities.includes("Amphibious") && spirit.hp_boost === 0) {
-      spirit.hp_boost = spirit.HP * 0.25;
+      spirit.hp_boost += Math.floor(spirit.HP * 0.25);
     }
 
     updateSpiritPosition(game, spirit, true_dest);
@@ -433,6 +483,7 @@ function doBattleTurn(game, battle) {
   // Finally, we do damage calculations and update the HPs.
   enactHealthChange(battle.player_one_spirit, res_1, res_2);
   enactHealthChange(battle.player_two_spirit, res_2, res_1);
+  boardUpdate(game, false);
 
   if (battle.player_one_spirit.current_hp === 0 || battle.player_two_spirit.current_hp === 0) {
     battle.finished = true;
@@ -441,24 +492,28 @@ function doBattleTurn(game, battle) {
   // Clear the moves and return the battle events.
   battle.player_one_move = null; battle.player_two_move = null;
   return [
-    battle.player_one_spirit.current_hp < starting_hp_1, 
-    battle.player_two_spirit.current_hp < starting_hp_2,
+    // battle.player_one_spirit.current_hp < starting_hp_1,
+    // battle.player_two_spirit.current_hp < starting_hp_2,
+    starting_hp_1 - battle.player_one_spirit.current_hp,
+    starting_hp_2 - battle.player_two_spirit.current_hp,
   ];
 }
 
 // Helper function for doBattleTurn. Do not call directly!
 function enactHealthChange(spirit, res, enemy_res) {
   let change = res[2] - (enemy_res[0] * res[1]);
-  // change = direct change - (enemy damage * incoming perct)
+  // change = direct change - (enemy damage * incoming perct), 
+  // such that a negative change value represents damage and positive is healing
 
-  change -= spirit.hp_boost;
-  spirit.hp_boost = Math.max(0, Math.floor(spirit.hp_boost + change));
-
-  if (change < 0) {
-    spirit.current_hp += change;
-    // Make sure we are dealing with integers only, and hp is never negative.
-    spirit.current_hp = Math.max(0, Math.floor(spirit.current_hp));
+  if (change < 0) { // only affects hp_boost if it is damage, we don't want to heal the boost
+    const boost = spirit.hp_boost; // temporary variable
+    spirit.hp_boost = Math.max(0, Math.floor(spirit.hp_boost + change));
+    change += boost;
   }
+
+  spirit.current_hp = boundHealth(spirit, spirit.current_hp + change);
+  // Make sure we are dealing with integers only, and hp is never negative.
+  // spirit.current_hp = Math.max(0, Math.floor(spirit.current_hp));
 }
 
 // Helper function for doBattleTurn. Do not call directly!
@@ -481,11 +536,11 @@ function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
   }
   
   if (enemy.abilities.includes("Plague")) {
-    direct -= Math.min(spirit.current_hp, spirit.HP * 0.05);
+    direct -= spirit.HP * 0.05;
   }
 
   if (spirit.abilities.includes("Regenerating")) {
-    direct += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.01);
+    direct += spirit.HP * 0.01;
     // The heal value here is lower than the turn based heal since battles tend
     // to have several turns.
   }
@@ -497,6 +552,8 @@ function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
     // If a spirit has damage modifiers, taken them into account and then clear them.
     damage *= spirit.dmg_boost;
     spirit.dmg_boost = 1;
+    // Permanent damage multipliers are not cleared.
+    damage *= spirit.permanent_dmg_boost;
 
     if (initiator && spirit.abilities.includes("Aggresive")) {
       damage *= 1.5;
@@ -505,15 +562,14 @@ function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
     if (spirit.abilities.includes("Amphibious") && tileType(game, spirit.position) === 'water') {
       damage *= 1.5;
     }
-
   } else if (curr_move === 'meditate') { /* -=====- MEDITATE -=====- */
     // If a spirit meditates, all incoming damage is reduced by half...
-    incoming *= spirit.abilities.includes("Enlightened") ? 0.75 : 0.5;
+    incoming *= 0.5;
     // ...and the next attack will do increased damage.
-    spirit.dmg_boost = 1.5;
+    spirit.dmg_boost = spirit.abilities.includes("Enlightened") ? 1.75 : 1.5;
 
     if (spirit.abilities.includes("Divine")) {
-      direct += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.05);
+      direct += spirit.HP * 0.05;
     }
 
   } else if (curr_move === 'dodge') { /* -=====- DODGE -=====- */
@@ -557,15 +613,13 @@ function addToGraveyard(game, battle) {
 
 function handleKillEffects(game, spirit) {
   if (spirit.abilities.includes("Rampage")) {
-    if (!spirit.effects["Rampage"]) {
-      spirit.effects["Rampage"] = {
-        effect: "Rampage",
-        kills: 0,
-        dmg_boost: 0,
-      };
-    }
-    spirit.effects["Rampage"].kills++;
-    spirit.effects["Rampage"].dmg_boost += 1.5;
+    const effect = getEffect(spirit, "Rampage");
+    effect.kills++;
+    effect.dmg_boost += 1.5;
+  }
+
+  if (spirit.abilities.includes("Vampire")) {
+    spirit.current_hp = boundHealth(spirit, spirit.current_hp + spirit.HP * 0.45);
   }
 
   // Refresh object, otherwise weird things happen?
@@ -582,6 +636,8 @@ function addToGraveyardHelper(game, spirit) {
     updateSpiritPosition(game, spirit, null);
     return true;
   } else {
+    // Refresh object, otherwise weird things happen?
+    game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
     return false;
   }
 }
@@ -604,37 +660,52 @@ function updateGraveyard(game) {
       spirit.cooldown -= 1;
     }
   }
-  console.log("\nCURRENT GRAVEYARD:\n", game.graveyard);
 }
 
-// Changes the turn of the game to the player whose turn it is currently not.
-// Also handles the logic for some turn based abilities such as regeneration.
-function turnChange(game) {
-  updateGraveyard(game);
-
+// Loops over all spirits currently on the board and updates various stats.
+// If they have turn based effects, those occur if (changed === true). Other calculations,
+// like updating the spirit.perment_dmg_boost, are done regardless.
+function boardUpdate(game, changed) {
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
       const spirit = game.spirits_board[y][x];
       if (spirit) {
 
-        spirit.permanent_dmg_boost = 1;
+        if (spirit.abilities.includes("Regenerating") && changed) {
+          if (spirit.current_hp < spirit.HP) {
+            // spirit.current_hp += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.1);
+            spirit.current_hp = boundHealth(spirit, spirit.current_hp + (spirit.HP * 0.1));
+          }
+        }
+
+        if (spirit.abilities.includes("Rage")) {
+          const multiplier = spirit.HP / spirit.current_hp;
+          getEffect(spirit, "Rage").dmg_boost = Math.min(multiplier, 8);
+        }
+        
+        spirit.permanent_dmg_boost = 0;
         for (const effect in spirit.effects) {
           if (spirit.effects[effect].dmg_boost) {
             spirit.permanent_dmg_boost = spirit.permanent_dmg_boost + spirit.effects[effect].dmg_boost;
           }
         }
-
-        if (spirit.abilities.includes("Regenerating")) {
-          if (spirit.current_hp < spirit.HP) {
-            spirit.current_hp += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.1);
-          }
-        }
+        // Since we are adding each effects boost to the total, we want to start
+        // at 0 and not 1. However we don't want a spirit with no effects to have a 0x multiplier.
+        spirit.permanent_dmg_boost = Math.round(spirit.permanent_dmg_boost * 100) / 100; // Rounds to 2 decimal
+        spirit.permanent_dmg_boost = Math.max(1, spirit.permanent_dmg_boost);
 
         // Refresh object, otherwise weird things happen?
         game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
       }
     }
   }
+}
+
+// Changes the turn of the game to the player whose turn it is currently not.
+// Calls the board update handler to do turn based updates on values and effects.
+function turnChange(game) {
+  updateGraveyard(game);
+  boardUpdate(game, true);
 
   game.turn = (game.turn === game.player_one) ? game.player_two : game.player_one;
 }
@@ -819,8 +890,7 @@ io.on('connection', (socket) => {
         for (let x = -1; x <= 1; x++) {
           for (let y = -1; y <= 1; y++) {
             const tile_dest = `board-tile<${enemy.position[0] + x},${enemy.position[1] + y}>`;
-            if (hasValidPath(game, spirit.position, tile_dest, spirit.abilities, max)) {
-              doSpiritMove(game, spirit, tile_dest);
+            if (doSpiritMove(game, spirit, tile_dest)) {
               update_type = 'turn-update:battle+move';
               break outerloop;
             }

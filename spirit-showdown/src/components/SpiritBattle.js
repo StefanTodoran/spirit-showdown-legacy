@@ -21,6 +21,7 @@ export default class SpiritBattle extends Component {
     if (this.props.player_one) {
       flashing.reverse();
     }
+    console.log("enemy", flashing[0], "me", flashing[1]);
 
     let canFlee = false;
     if (this.props.player_one && this.props.battle.initiator === "player_one" || 
@@ -31,10 +32,11 @@ export default class SpiritBattle extends Component {
     const enemyPrevMove = (this.props.player_one) ? this.props.battle.player_two_prev : this.props.battle.player_one_prev;
     const myPrevMove = (this.props.player_one) ? this.props.battle.player_one_prev : this.props.battle.player_two_prev;
 
-    const enemyBoost = enemy.dmg_boost * enemy.permanent_dmg_boost;
-    const myBoost = spirit.dmg_boost * spirit.permanent_dmg_boost;
-
-    console.log(enemy.permanent_dmg_boost, enemy.effects);
+    const enemyBoost = Math.round(enemy.dmg_boost * enemy.permanent_dmg_boost * 100) / 100;
+    const myBoost = Math.round(spirit.dmg_boost * spirit.permanent_dmg_boost * 100) / 100;
+    
+    const enemyPopDist = (Math.random() * 600) - 300;
+    const myPopDist = (Math.random() * 600) - 300;
     return (
       <>
         <div style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px', 
@@ -47,6 +49,16 @@ export default class SpiritBattle extends Component {
                 <strong>{enemy.current_hp + enemy.hp_boost}</strong> /{enemy.HP} HP
               </p>
               {enemyBoost !== 1 && <p><strong>{enemyBoost}x</strong> ATK</p>}
+              {flashing[0] > 0 && 
+              <p className='popping-number damage' 
+                style={{"--horizontal": `${enemyPopDist}%`, "--rotation": Math.sign(enemyPopDist)}}>
+                {flashing[0] * -1}
+              </p>}
+              {flashing[0] < 0 && 
+              <p className='popping-number heal' 
+                style={{"--horizontal": `${enemyPopDist}%`, "--rotation": Math.sign(enemyPopDist)}}>
+                +{flashing[0] * -1}
+              </p>}
             </div>
           </div>
         </div>
@@ -57,9 +69,19 @@ export default class SpiritBattle extends Component {
             <Spirit spirit={spirit} flashing={flashing[1]}/>
             <div className="spirit-stats">
               <p>
-                <strong>{spirit.current_hp + spirit.hp_boost}</strong> /{spirit.HP + spirit.hp_boost} HP
+                <strong>{spirit.current_hp + spirit.hp_boost}</strong> /{spirit.HP} HP
               </p>
               {myBoost !== 1 && <p><strong>{myBoost}x</strong> ATK</p>}
+              {flashing[1] > 0 && 
+              <p className='popping-number damage' 
+                style={{"--horizontal": `${myPopDist}%`, "--rotation": Math.sign(myPopDist)}}>
+                {flashing[1] * -1}
+              </p>}
+              {flashing[1] < 0 && 
+              <p className='popping-number heal' 
+                style={{"--horizontal": `${myPopDist}%`, "--rotation": Math.sign(myPopDist)}}>
+                +{flashing[1] * -1}
+              </p>}
             </div>
           </div>
           <section style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly' }}>
