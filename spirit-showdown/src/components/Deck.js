@@ -19,8 +19,7 @@ export default class Deck extends Component {
       hp_boost: 0, // this number is stacked on health
       dmg_boost: 1, // this is a multiplier on damage
     
-      permanent_dmg_boost: 1,
-      effects: {},
+      effects: [],
     }
   }
 
@@ -63,6 +62,7 @@ export default class Deck extends Component {
         display: 'grid', 
         width: 'min(95vw, 1500px)',
         justifyContent: 'center',
+        maxWidth: 700,
         ...( this.props.display ? { gridTemplateColumns: 'repeat(auto-fit, 225px)' } : { gridTemplateColumns: 'repeat(auto-fit, 100px)' } ),
       }}>
         {deck}{graveyard}

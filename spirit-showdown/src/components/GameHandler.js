@@ -117,6 +117,7 @@ export default class GameHandler extends Component {
             spirits_board={this.props.gameState.spirits_board}
             player={this.props.player_id}
             flipped={this.props.player_id !== this.props.gameState.player_one}
+            winner={this.props.gameState.winner}
           />
           <Deck 
             deck={hand}
@@ -124,7 +125,7 @@ export default class GameHandler extends Component {
             selectCallback={this.selectSpirit}
             selected={this.state.selectedSpirit}
             player={this.props.player_id}
-            display={false} 
+            display={false}
           />
           {this.props.gameState.turn === this.props.player_id && <p>Your turn to play</p>}
           {this.props.gameState.turn !== this.props.player_id && <Loader text={"Waiting for opponent's move"}/>}

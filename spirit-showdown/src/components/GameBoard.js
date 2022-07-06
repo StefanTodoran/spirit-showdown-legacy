@@ -43,8 +43,18 @@ export default class GameBoard extends Component {
     }
 
     return (
-      <div style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px', padding: 10, margin: 10 }}>
+      <div style={{ 
+        position: "relative", 
+        backgroundColor: '#f0f0f0', 
+        border: '1px solid #ccc', 
+        borderRadius: '5px', 
+        padding: 10, 
+        margin: 10 
+      }}>
         {board}
+        <div className={(this.props.winner) ? 'game-over-message' : 'game-over-message hidden'}>
+          {this.props.winner === this.props.player ? "You won!" : "You lost!"}
+        </div>
       </div>
     );
   }

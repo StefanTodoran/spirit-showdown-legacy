@@ -13,14 +13,14 @@ const io = new Server(httpServer, {
 /* ===== ===== ===== */
 const tiles_boards = [
   [
-    ['wall','portal','wall','wall','p2-spawn','wall','wall','wall','wall','p2-spawn','wall','wall',],
-    ['wall','none','wall','none','none','none','none','none','none','none','none','wall',],
+    ['wall','wall','wall','wall','p2-spawn','wall','wall','wall','wall','p2-spawn','wall','wall',],
+    ['portal','none','wall','none','none','none','none','none','none','none','none','wall',],
     ['wall','none','none','none','wall','wall','wall','none','none','none','none','wall',],
     ['wall','water','water','wall','none','none','none','none','none','water','water','wall',],
     ['wall','water','water','none','none','none','none','none','wall','water','water','wall',],
     ['wall','none','none','none','none','wall','wall','wall','none','none','none','wall',],
-    ['wall','none','none','none','none','none','none','none','none','wall','none','wall',],
-    ['wall','wall','p1-spawn','wall','wall','wall','wall','p1-spawn','wall','wall','portal','wall',],
+    ['wall','none','none','none','none','none','none','none','none','wall','none','portal',],
+    ['wall','wall','p1-spawn','wall','wall','wall','wall','p1-spawn','wall','wall','wall','wall',],
   ],
   [
     ['wall','portal','portal','wall','water','water','water','wall','wall','p2-spawn','wall','wall',],
@@ -33,25 +33,45 @@ const tiles_boards = [
     ['wall','wall','p1-spawn','wall','wall','water','water','water','wall','portal','portal','wall',],
   ],
   [
-    ['wall','p2-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p2-spawn','wall',],
-    ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
-    ['wall','none','none','wall','none','wall','water','none','none','none','none','wall',],
-    ['portal','none','none','none','none','wall','water','none','none','wall','wall','wall',],
-    ['wall','wall','wall','none','none','water','wall','none','none','none','none','portal',],
-    ['wall','none','none','none','none','water','wall','none','wall','none','none','wall',],
-    ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
-    ['wall','p1-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p1-spawn','wall',],
-  ],
-  [
     ['wall','water','water','water','p2-spawn','wall','wall','wall','wall','wall','wall','wall',],
-    ['portal','none','none','wall','none','none','none','none','none','none','none','wall',],
+    ['portal','none','none','none','none','none','none','none','none','none','none','wall',],
     ['wall','none','none','none','none','water','none','none','wall','none','none','p2-spawn',],
     ['wall','wall','none','none','none','water','water','none','none','wall','none','wall',],
     ['wall','none','wall','none','none','water','water','none','none','none','wall','wall',],
     ['p1-spawn','none','none','wall','none','none','water','none','none','none','none','wall',],
-    ['wall','none','none','none','none','none','none','none','wall','none','none','portal',],
+    ['wall','none','none','none','none','none','none','none','none','none','none','portal',],
     ['wall','wall','wall','wall','wall','wall','wall','p1-spawn','water','water','water','wall',],
   ],
+  [
+    ['wall','wall','wall','p2-spawn','none','none','none','none','none','none','p2-spawn','wall',],
+    ['wall','none','none','none','wall','none','wall','none','none','none','none','wall',],
+    ['none','none','none','none','none','wall','wall','none','none','none','none','none',],
+    ['portal','wall','none','none','water','none','none','water','none','wall','none','none',],
+    ['none','none','wall','none','water','none','none','water','none','none','wall','portal',],
+    ['none','none','none','none','none','wall','wall','none','none','none','none','none',],
+    ['wall','none','none','none','none','wall','none','wall','none','none','none','wall',],
+    ['wall','p1-spawn','none','none','none','none','none','none','p1-spawn','wall','wall','wall',],
+  ],
+  [
+    ['water','p2-spawn','none','none','none','none','none','none','none','none','p2-spawn','water',],
+    ['water','none','none','none','none','water','water','none','none','none','none','water',],
+    ['water','none','none','none','none','none','water','none','wall','wall','none','water',],
+    ['water','wall','none','wall','wall','none','none','none','portal','none','wall','water',],
+    ['water','wall','none','portal','none','none','none','wall','wall','none','wall','water',],
+    ['water','none','wall','wall','none','water','none','none','none','none','none','water',],
+    ['water','none','none','none','none','water','water','none','none','none','none','water',],
+    ['water','p1-spawn','none','none','none','none','none','none','none','none','p1-spawn','water',],
+  ],
+  // [
+  //   ['wall','p2-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p2-spawn','wall',],
+  //   ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
+  //   ['wall','none','none','wall','none','wall','water','none','none','none','none','wall',],
+  //   ['portal','none','none','none','none','wall','water','none','none','wall','wall','wall',],
+  //   ['wall','wall','wall','none','none','water','wall','none','none','none','none','portal',],
+  //   ['wall','none','none','none','none','water','wall','none','wall','none','none','wall',],
+  //   ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
+  //   ['wall','p1-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p1-spawn','wall',],
+  // ],
 ];
 const spirits_board = [
   [null,null,null,null,null,null,null,null,null,null,null,null,],
@@ -148,6 +168,7 @@ function createGameObj(players) {
 
     player_one: firstPlayer,
     player_two: secondPlayer,
+    winner: null,
     
     player_one_deck: null, // Deck is spirits they have, hand is spirits not in play.
     player_two_deck: null, // Deck never changes, hand starts off as deck but cards are played (removed).
@@ -371,35 +392,68 @@ function pathHelper(game, pos, dest, abilities, depth, MAX_DEPTH) {
 // will be created based on one of the template effect starters. Then the (prior 
 // existing or newly created) effect is returned to be manipulated. 
 function getEffect(spirit, effect) {
-  if (!spirit.effects[effect]) {
-    const templates = {
-      "Rampage": {
-        effect: "Rampage",
-        kills: 0,
-        dmg_boost: 0,
-      },
-      "Rage": {
-        effect: "Rage",
-        dmg_boost: 0,
-      },
-      "Cursed": {
-        effect: "Cursed",
-        duration: 3, // remaining turns
-      },
-      "Frozen": {
-        effect: "Frozen",
-        duration: 3,
-      },
-      "Burning": {
-        effect: "Burning",
-        duration: 8,
-        dmg: 0, // amount of damage taken per turn
-      },
-    }
-    spirit.effects[effect] = templates[effect];
+  const matches = spirit.effects.filter(e => e.effect === effect);
+  const templates = {
+    "Rampage": {
+      effect: "Rampage",
+      kills: 0,
+      dmg_boost: 0,
+    },
+    "Rage": {
+      effect: "Rage",
+      dmg_boost: 0,
+    },
+    "Frozen": {
+      effect: "Frozen",
+      duration: 2,
+    },
+    "Hydrated": {
+      effect: "Hydrated",
+      dmg_boost: .5,
+    },
+    "Meditated": {
+      effect: "Meditated",
+      dmg_boost: .25,
+      one_time: true, // lasts one battle turn, whether used or not
+    },
+    "Combo": {
+      effect: "Combo",
+      dmg_boost: .75,
+      one_time: true,
+    },
+    "Charged": {
+      effect: "Charged",
+      dmg_boost: 0,
+      used: false, // lasts one use, when that use occurs does not matter
+    },
+    "Burning": {
+      effect: "Burning",
+      duration: 5, // number of turns the effect lasts
+      dmg: 35, // amount of damage taken per turn
+    },
+    // "Cursed": {
+    //   effect: "Cursed",
+    //   duration: 0,
+    // },
+  }
+  const effect_ = matches.length === 0 ? fakeDeepCopy(templates[effect]) : matches[0];
+  if (matches.length === 0) {
+    spirit.effects.push(effect_);
   }
 
-  return spirit.effects[effect];
+  return effect_;
+}
+
+// Return whether or not the given spirit has the given effect.
+function hasEffect(spirit, effect) {
+  const matches = spirit.effects.filter(e => e.effect === effect);
+  return matches.length !== 0;
+}
+
+// Removes the given effect from the given spirit.
+function deleteEffect(spirit, effect) {
+  const matches = spirit.effects.filter(e => e.effect === effect);
+  remove(spirit.effects, matches[0]);
 }
 /* MISCELLANEOUS HELPERS */
 
@@ -424,8 +478,11 @@ function doSpiritMove(game, spirit, destination) {
       }
     }
 
-    if (type === 'water' && spirit.abilities.includes("Amphibious") && spirit.hp_boost === 0) {
-      spirit.hp_boost += Math.floor(spirit.HP * 0.25);
+    if (type === 'water' && spirit.abilities.includes("Amphibious")) {
+      getEffect(spirit, "Hydrated");
+    }
+    if (type !== 'water' && hasEffect(spirit, "Hydrated")) {
+      deleteEffect(spirit, "Hydrated");
     }
 
     updateSpiritPosition(game, spirit, true_dest);
@@ -447,10 +504,8 @@ function canWalkTile(game, tile, abilities) {
     abilities.includes("Amphibious") || abilities.includes("Flying") || abilities.includes("Octopus"))) {
     return true;
   } 
-  if (type === 'portal' && (abilities.includes("Psychic") || abilities.includes("Esper"))) {
-    return true;
-  }
-  if (type === 'wall' && abilities.includes("Wraith")) {
+  if (type === 'portal' && (abilities.includes("Psychic") || abilities.includes("Esper") ||
+    abilities.includes("Clairvoyant"))) {
     return true;
   }
   return false;
@@ -460,32 +515,38 @@ function canWalkTile(game, tile, abilities) {
 // null. Returns a list with two items: the first is whether the first player was hit and
 // the second is whether the second player was hit.
 function doBattleTurn(game, battle) {
-  // We set these first, before even fleeing so that on flee the opponent
-  // can see that their enemy selected to flee.
   battle.player_one_prev = battle.player_one_move;
   battle.player_two_prev = battle.player_two_move;
-
-  if ((battle.initiator === 'player_one' && battle.player_one_move === 'flee') ||
-    (battle.initiator === 'player_two' && battle.player_two_move === 'flee')) {
-    battle.finished = true;
-    return [false, false];
-  }
 
   const starting_hp_1 = battle.player_one_spirit.current_hp;
   const starting_hp_2 = battle.player_two_spirit.current_hp;
 
-  const res_1 = calcModifiersHelper(game, battle.player_one_spirit, battle.player_two_spirit, 
+  const res_1 = calcModifiersHelper(battle.player_one_spirit, battle.player_two_spirit, 
     battle.player_one_move, battle.initiator === 'player_one');
-  const res_2 = calcModifiersHelper(game, battle.player_two_spirit, battle.player_one_spirit, 
+  const res_2 = calcModifiersHelper(battle.player_two_spirit, battle.player_one_spirit, 
     battle.player_two_move, battle.initiator === 'player_two');
   // res is [damage, incoming, direct]
 
+  console.log(res_1, res_2);
+
   // Finally, we do damage calculations and update the HPs.
-  enactHealthChange(battle.player_one_spirit, res_1, res_2);
-  enactHealthChange(battle.player_two_spirit, res_2, res_1);
+  const hit_1 = enactHealthChange(battle.player_one_spirit, res_1, res_2);
+  const hit_2 = enactHealthChange(battle.player_two_spirit, res_2, res_1);
+
+  handleHitEffects(battle.player_one_spirit, battle.player_two_spirit, hit_2);
+  handleHitEffects(battle.player_two_spirit, battle.player_one_spirit, hit_1);
+
+  refreshReference(game, battle.player_one_spirit);
+  refreshReference(game, battle.player_two_spirit);
   boardUpdate(game, false);
 
   if (battle.player_one_spirit.current_hp === 0 || battle.player_two_spirit.current_hp === 0) {
+    battle.finished = true;
+    addToGraveyard(game, game.battle);
+  }
+
+  if ((battle.initiator === 'player_one' && battle.player_one_move === 'flee' && !battle.player_two_spirit.abilities.includes("Demonic")) ||
+  (battle.initiator === 'player_two' && battle.player_two_move === 'flee' && !battle.player_one_spirit.abilities.includes("Demonic"))) {
     battle.finished = true;
   }
 
@@ -500,24 +561,7 @@ function doBattleTurn(game, battle) {
 }
 
 // Helper function for doBattleTurn. Do not call directly!
-function enactHealthChange(spirit, res, enemy_res) {
-  let change = res[2] - (enemy_res[0] * res[1]);
-  // change = direct change - (enemy damage * incoming perct), 
-  // such that a negative change value represents damage and positive is healing
-
-  if (change < 0) { // only affects hp_boost if it is damage, we don't want to heal the boost
-    const boost = spirit.hp_boost; // temporary variable
-    spirit.hp_boost = Math.max(0, Math.floor(spirit.hp_boost + change));
-    change += boost;
-  }
-
-  spirit.current_hp = boundHealth(spirit, spirit.current_hp + change);
-  // Make sure we are dealing with integers only, and hp is never negative.
-  // spirit.current_hp = Math.max(0, Math.floor(spirit.current_hp));
-}
-
-// Helper function for doBattleTurn. Do not call directly!
-function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
+function calcModifiersHelper(spirit, enemy, curr_move, initiator) {
   // Damage is the amount of damage being outputed. The enemy will take damage*incoming
   // damage, where incoming is some damage resistance less than 1. Damage is positive and subtracted from health.
   let damage = 0;
@@ -532,44 +576,59 @@ function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
   }
 
   if (spirit.abilities.includes("Tank")) {
-    incoming *= 0.25;
+    incoming *= 0.5;
   }
   
   if (enemy.abilities.includes("Plague")) {
-    direct -= spirit.HP * 0.05;
+    direct -= spirit.HP * 0.1;
   }
 
   if (spirit.abilities.includes("Regenerating")) {
-    direct += spirit.HP * 0.01;
+    direct += spirit.HP * 0.025;
     // The heal value here is lower than the turn based heal since battles tend
     // to have several turns.
+  }
+
+  if (hasEffect(spirit, "Hydrated")) {
+    incoming *= 0.75;
+  }
+
+  if (hasEffect(spirit, "Burning")) {
+    direct -= getEffect(spirit, "Burning").dmg;
+  }
+
+  if (spirit.type === "Marine" && enemy.abilities.includes("Sushi Chef")) {
+    incoming *= 1.25;
   }
 
   if (curr_move === 'attack') { /* -=====- ATTACK -=====- */
     damage = spirit.abilities.includes("Wildcard") ? 
       randInt(spirit.ATK * 0.8, spirit.ATK * 1.75) : randInt(spirit.ATK * 0.8, spirit.ATK * 1.2);
 
-    // If a spirit has damage modifiers, taken them into account and then clear them.
+    // If a spirit has damage modifiers, take them into account.
     damage *= spirit.dmg_boost;
-    spirit.dmg_boost = 1;
-    // Permanent damage multipliers are not cleared.
-    damage *= spirit.permanent_dmg_boost;
+
+    if (hasEffect(spirit, "Charged")) {
+      const effect = getEffect(spirit, "Charged");
+      effect.used = true;
+    }
 
     if (initiator && spirit.abilities.includes("Aggresive")) {
       damage *= 1.5;
     }
 
-    if (spirit.abilities.includes("Amphibious") && tileType(game, spirit.position) === 'water') {
-      damage *= 1.5;
-    }
   } else if (curr_move === 'meditate') { /* -=====- MEDITATE -=====- */
-    // If a spirit meditates, all incoming damage is reduced by half...
-    incoming *= 0.5;
+    // If a spirit meditates, all incoming damage is reduced...
+    incoming *= spirit.abilities.includes("Nuker") ? 0.25 : 0.5;
     // ...and the next attack will do increased damage.
-    spirit.dmg_boost = spirit.abilities.includes("Enlightened") ? 1.75 : 1.5;
+
+    const effect = getEffect(spirit, "Meditated");
+    if (spirit.abilities.includes("Enlightened")) {
+      effect.dmg_boost = .75;
+    }
 
     if (spirit.abilities.includes("Divine")) {
-      direct += spirit.HP * 0.05;
+      direct += spirit.HP * 0.1;
     }
 
   } else if (curr_move === 'dodge') { /* -=====- DODGE -=====- */
@@ -588,12 +647,55 @@ function calcModifiersHelper(game, spirit, enemy, curr_move, initiator) {
       incoming = 0;
 
       if (spirit.abilities.includes("Martial Artist")) {
-        spirit.dmg_boost = 1.75;
+        getEffect(spirit, "Combo");
       }
     }
+  } else if (curr_move === 'charge') { /* -=====- CHARGE -=====- */
+    // Charging an attack makes you vulnerable to taking more damage...
+    incoming *= 1.45;
+    // ...however, you gain a large and stackable damage boost.
+
+    const effect = getEffect(spirit, "Charged");
+    effect.dmg_boost += spirit.abilities.includes("Nuker") ? 2.25 : 1.5;
   }
 
   return [damage, incoming, direct];
+}
+
+// Helper function for doBattleTurn. Do not call directly!
+// Returns true if the spirit took damage (hp_boost damage doesn't count).
+function enactHealthChange(spirit, res, enemy_res) {
+  let change = res[2] - (enemy_res[0] * res[1]);
+  // change = direct change - (enemy damage * incoming perct), 
+  // such that a negative change value represents damage and positive is healing
+
+  // if (change < 0) { // only affects hp_boost if it is damage, we don't want to heal the boost
+  //   const boost = spirit.hp_boost; // temporary variable
+  //   spirit.hp_boost = Math.max(0, Math.floor(spirit.hp_boost + change));
+  //   change += boost;
+  // }
+
+  spirit.current_hp = boundHealth(spirit, spirit.current_hp + change);
+  return (enemy_res[0] * res[1]) > 0;
+}
+
+function handleHitEffects(spirit, enemy, enemy_hit) {
+  if (enemy_hit) {
+    if (spirit.abilities.includes("Flaming") || spirit.abilities.includes("Arsonist")) {
+      if (Math.random() < 0.3) {
+        const effect = getEffect(enemy, "Burning");
+        effect.duration = randInt(2, 5);
+        effect.damage = randInt(0.1 * spirit.ATK, 0.2 * spirit.ATK);
+      }
+    }
+
+    if (spirit.abilities.includes("Arctic")) {
+      if (Math.random() < 0.3) {
+        const effect = getEffect(enemy, "Frozen");
+        effect.duration = randInt(1, 2);
+      }
+    }
+  }
 }
 
 // Adds the knocked out spirits to the graveyard. Also, if the spirit was  knocked out, 
@@ -611,19 +713,20 @@ function addToGraveyard(game, battle) {
   }
 }
 
+// Helper function for addToGraveyard. Do not call directly!
+// Assumes that the provided spirit KOed the enemy spirit.
 function handleKillEffects(game, spirit) {
   if (spirit.abilities.includes("Rampage")) {
     const effect = getEffect(spirit, "Rampage");
     effect.kills++;
-    effect.dmg_boost += 1.5;
+    effect.dmg_boost += .5;
   }
 
   if (spirit.abilities.includes("Vampire")) {
     spirit.current_hp = boundHealth(spirit, spirit.current_hp + spirit.HP * 0.45);
   }
 
-  // Refresh object, otherwise weird things happen?
-  game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
+  refreshReference(game, spirit);
 }
 
 // Helper function for addToGraveyard. Do not call directly.
@@ -636,8 +739,7 @@ function addToGraveyardHelper(game, spirit) {
     updateSpiritPosition(game, spirit, null);
     return true;
   } else {
-    // Refresh object, otherwise weird things happen?
-    game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
+    refreshReference(game, spirit);
     return false;
   }
 }
@@ -664,7 +766,7 @@ function updateGraveyard(game) {
 
 // Loops over all spirits currently on the board and updates various stats.
 // If they have turn based effects, those occur if (changed === true). Other calculations,
-// like updating the spirit.perment_dmg_boost, are done regardless.
+// like updating the spirit.dmg_boost, are done regardless.
 function boardUpdate(game, changed) {
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
@@ -673,32 +775,74 @@ function boardUpdate(game, changed) {
 
         if (spirit.abilities.includes("Regenerating") && changed) {
           if (spirit.current_hp < spirit.HP) {
-            // spirit.current_hp += Math.min(spirit.HP - spirit.current_hp, spirit.HP * 0.1);
             spirit.current_hp = boundHealth(spirit, spirit.current_hp + (spirit.HP * 0.1));
           }
         }
 
         if (spirit.abilities.includes("Rage")) {
-          const multiplier = spirit.HP / spirit.current_hp;
+          const multiplier = (spirit.HP / spirit.current_hp) - 1;
           getEffect(spirit, "Rage").dmg_boost = Math.min(multiplier, 8);
         }
         
-        spirit.permanent_dmg_boost = 0;
-        for (const effect in spirit.effects) {
-          if (spirit.effects[effect].dmg_boost) {
-            spirit.permanent_dmg_boost = spirit.permanent_dmg_boost + spirit.effects[effect].dmg_boost;
+        spirit.dmg_boost = 1;
+        for (let i = 0; i < spirit.effects.length; i++) {
+          const effect = spirit.effects[i];
+          if (effect.dmg_boost) {
+            spirit.dmg_boost += effect.dmg_boost;
+          }
+          if ((effect.one_time && changed) || (effect.used && changed)) {
+            deleteEffect(spirit, effect.effect);
+          }
+          if (typeof effect.duration === "number") {
+            if (effect.duration === 0) {
+              deleteEffect(spirit, effect.effect);
+            } else {
+              effect.duration--;
+            }
           }
         }
-        // Since we are adding each effects boost to the total, we want to start
-        // at 0 and not 1. However we don't want a spirit with no effects to have a 0x multiplier.
-        spirit.permanent_dmg_boost = Math.round(spirit.permanent_dmg_boost * 100) / 100; // Rounds to 2 decimal
-        spirit.permanent_dmg_boost = Math.max(1, spirit.permanent_dmg_boost);
+        spirit.dmg_boost = Math.round(spirit.dmg_boost * 100) / 100; // Rounds to 2 decimal
 
-        // Refresh object, otherwise weird things happen?
-        game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
+        refreshReference(game, spirit);
       }
     }
   }
+}
+
+// Refresh object, otherwise weird things happen?
+function refreshReference(game, spirit) {
+  game.spirits_board[spirit.position[0]][spirit.position[1]] = spirit;
+}
+
+// Checks the board to see if either player has both of their spawn tiles
+// blocked, in which case they have lost. Then returns a boolean representing the result,
+// which is also updated in the game object.
+function checkWinConditions(game) {
+  let p1_controlled = 0; let p2_controlled = 0;
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      // We are looking only at the spawn in tiles. If both are occupied,
+      // that player has lost as they cannot spawn in new spirits.
+      const occupant = game.spirits_board[y][x];
+      if (game.tiles_board[y][x] === 'p1-spawn' && occupant && occupant.owner === game.player_two) {
+        p2_controlled++;
+      }
+      if (game.tiles_board[y][x] === 'p2-spawn' && occupant && occupant.owner === game.player_one) {
+        p1_controlled++;
+      }
+    }
+  }
+
+  if (p1_controlled === 2) {
+    game.winner = game.player_one;
+    return true;
+  }
+  if (p2_controlled === 2) {
+    game.winner = game.player_two;
+    return true;
+  }
+
+  return false;
 }
 
 // Changes the turn of the game to the player whose turn it is currently not.
@@ -796,6 +940,8 @@ io.on('connection', (socket) => {
     // Once we have both player's decks, we can reply with the initial game state.
     if (game.player_one_deck && game.player_two_deck) {
       io.in(lobby_id).emit('init-game-state', game);
+      /*DEBUG*/ console.log(game.player_one_hand);
+      /*DEBUG*/ console.log(game.player_two_hand);
     }
   });
 
@@ -822,8 +968,15 @@ io.on('connection', (socket) => {
       // to check if the move is valid, e.g. within range & to a walkable tile.
 
       if (doSpiritMove(game, spirit, tile)) {
-        turnChange(game);
-        io.in(lobby_id).emit('turn-update', game);
+        if (!(tileType(game, tile) === 'portal' && spirit.abilities.includes("Clairvoyant"))) {
+          turnChange(game);
+        }
+        
+        if (checkWinConditions(game)) {
+          delete lobbies[lobby_id];
+        }
+
+        io.in(lobby_id).emit('state-update', game);
       }
     } else {
       // We set hand to the hand of the player who is doing a move.
@@ -854,7 +1007,7 @@ io.on('connection', (socket) => {
             turnChange(game);
           }
 
-          io.in(lobby_id).emit('turn-update', game);
+          io.in(lobby_id).emit('state-update', game);
         }
       }
     }
@@ -882,7 +1035,7 @@ io.on('connection', (socket) => {
     }
 
     if (!game.battle || game.battle.finished)  {
-      let update_type = 'turn-update';
+      let update_type = 'state-update';
 
       outerloop:
       if (!tileWithinDistance(spirit.position, enemy.position, 1, true)) {
@@ -891,7 +1044,7 @@ io.on('connection', (socket) => {
           for (let y = -1; y <= 1; y++) {
             const tile_dest = `board-tile<${enemy.position[0] + x},${enemy.position[1] + y}>`;
             if (doSpiritMove(game, spirit, tile_dest)) {
-              update_type = 'turn-update:battle+move';
+              update_type = 'state-update:battle+move';
               break outerloop;
             }
           }
@@ -934,12 +1087,22 @@ io.on('connection', (socket) => {
         game.battle.player_two_move = move;
       }
 
+      function turnReady() {
+        return game.battle.player_one_move && game.battle.player_two_move ||
+          game.battle.player_one_move && hasEffect(game.battle.player_two_spirit, "Frozen") ||
+          game.battle.player_two_move && hasEffect(game.battle.player_one_spirit, "Frozen");
+      }
+      if (hasEffect(game.battle.player_one_spirit, "Frozen")) {
+        game.battle.player_one_move = "frozen";
+      }
+      if (hasEffect(game.battle.player_two_spirit, "Frozen")) {
+        game.battle.player_two_move = "frozen";
+      }
+
       // If both players have made their moves, we can start do the turn logic.
-      if (game.battle.player_one_move && game.battle.player_two_move) {
+      if (turnReady()) {
         const events = doBattleTurn(game, game.battle);
-        if (game.battle.finished) {
-          addToGraveyard(game, game.battle);
-        }
+        boardUpdate(game, true);
         io.in(lobby_id).emit('battle-update', game, events);
       }
     }

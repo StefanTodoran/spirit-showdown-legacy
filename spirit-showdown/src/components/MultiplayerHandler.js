@@ -23,6 +23,7 @@ export default class MultiplayerHandler extends Component {
       lobby_id: null,
       player_id: null,
       game_state: null,
+      game_over: false,
     
       battle_move_queued: false,
       battle_events: null,
@@ -55,25 +56,29 @@ export default class MultiplayerHandler extends Component {
 
     socket.on('start-game', () => {
       socket.emit('provide-deck', this.props.deck, this.state.lobby_id);
-      this.props.startedCallback(); // informs parent to remove menu buttons
+      this.props.startedCallback(true); // informs parent to remove menu buttons
     });
 
     socket.on('init-game-state', (game_state) => {
       this.setState({ game_state: game_state });
     });
 
-    socket.on('turn-update', (game_state) => {
+    socket.on('state-update', (game_state) => {
       this.setState({ game_state: game_state });
+
+      if (game_state.winner) {
+        this.setState({ game_over: true });
+      }
     });
 
     socket.on('battle-update', (game_state, battle_events) => {
       this.setState({ game_state: game_state, battle_events: battle_events, battle_move_queued: false });
       setTimeout(() => {
         this.setState({ battle_events: null });
-      }, 750);
+      }, 2000);
     });
 
-    socket.on('turn-update:battle+move', (game_state) => {
+    socket.on('state-update:battle+move', (game_state) => {
       const battle = game_state.battle;
       game_state.battle = null;
       this.setState({ game_state: game_state });
@@ -82,6 +87,13 @@ export default class MultiplayerHandler extends Component {
         this.setState({ game_state: game_state });
       }, 1500);
     });
+  }
+
+  // Clears the current game state, hidding the board and
+  // showing the lobby or join form. Also, hides the end game button.
+  endGame() {
+    this.props.startedCallback(false);
+    this.setState({ game_state: null, game_over: false });
   }
 
   // Used as a callback by JoinForm and LobbyForm to set the lobby_id
@@ -122,6 +134,8 @@ export default class MultiplayerHandler extends Component {
     
     return (
       <>
+        {this.state.game_over && 
+        <button style={{marginBottom: "1rem"}} onClick={this.endGame}>Leave Game</button>}
         {!this.state.connected && <Loader text={'Connecting to server'}/>}
         {!this.state.game_state && this.state.connected && <>{page}</>}
         {this.state.game_state && 

@@ -1,5 +1,6 @@
 import { Component } from 'react';
-import { ability_descriptions } from '../assets/abilities.js';
+import { buildSprite } from './buildSprite';
+import StatsCard from './StatsCard.js';
 import './Components.css';
 
 export default class SpiritTile extends Component {
@@ -35,45 +36,14 @@ export default class SpiritTile extends Component {
     }
     /* ===== */
 
-    // build up the sprite from the array tile by tile
-    const sprite = [];
-    for (let i = 0; i < this.props.spirit.sprite.length; i++) {
-      const row = [];
-      for (let j = 0; j < this.props.spirit.sprite[i].length; j++) {
-        const color = (this.props.spirit.sprite[i][j] === 1) ? this.props.spirit.lightColor : this.props.spirit.darkColor;
-        const tile = (this.props.spirit.sprite[i][j] === 0) ? blankTile(i, j) : fillTile(i, j, color);
-        row.push(tile);
-      }
-      sprite.push(<div key={`st-sprite-row<${i}>`} style={{ display: 'flex', flexDirection: 'row', margin: 0 }}>{row}</div>);
-    }
-
-    const abilities = [];
-    for (let i = 0; i < this.props.spirit.abilities.length; i++) {
-      abilities.push(
-        <p>
-          <strong>{this.props.spirit.abilities[i]}</strong><br />
-          {ability_descriptions[this.props.spirit.abilities[i]]}
-        </p>
-      );
-    }
-
+    const sprite = (this.props.spirit) ? buildSprite(this.props.spirit, blankTile, fillTile) : [];
     const class_name = this.props.selected ? 'deck selected' : this.props.dead ? 'deck selectable dead' : 'deck selectable';
+
     return (
       <div className={class_name} onClick={this.handleClick} 
         style={{...(this.props.dead ? {"--cooldown": `"${this.props.spirit.cooldown}"`} : {})}}>
         {sprite}
-        <section className='card hover-card'>
-          <br/>
-          <h2>{this.props.spirit.name}</h2>
-          <h3>({this.props.spirit.tier} tier)</h3>
-          {abilities}
-          <p>
-            <span><strong>HP:&nbsp;</strong>{this.props.spirit.HP}</span>
-            <span><strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}</span>
-            <span><strong>SPD:&nbsp;</strong>{this.props.spirit.speed}</span>
-            <br />
-          </p>
-        </section>
+        <StatsCard spirit={this.props.spirit} styleClass={'card hover-card'}/>
       </div>
     );
   }

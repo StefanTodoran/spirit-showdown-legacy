@@ -66,56 +66,61 @@ function fakeDeepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-function rgbToHsl(red, grn, blu) {
-  let r = red / 255;
-  let g = grn / 255;
-  let b = blu / 255;
+function hslToRgb(hue, sat, li) {
+  let h = hue / 360; let s = sat / 100; let l = li / 100;
+  let r, g, b;
 
-  let max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
-
-  if (max == min) {
-    h = s = 0; // achromatic
+  if (s == 0) {
+    r = g = b = l; // achromatic
   } else {
-    let d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
+    function hue2rgb(p, q, t) {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
     }
 
-    h /= 6;
+    let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    let p = 2 * l - q;
+
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
   }
 
-  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+  return [ r * 255, g * 255, b * 255 ];
 }
 
-function getHueType(hsl) {
+function getHueType(hue, sat, li) {
   const HUES_TABLE = [
     {low: 0, high: 15, value: "Blood"},
-    {low: 20, high: 35, value: "Pyromaniac"},
-    {low: 55, high: 65, value: "Power"},
+    {low: 15, high: 40, value: "Pyromaniac"},
+    {low: 45, high: 65, value: "Power"},
     {low: 90, high: 135, value: "Nature"},
     {low: 140, high: 155, value: "Toxic"},
     {low: 170, high: 240, value: "Marine"},
-    {low: 255, high: 285, value: "Paranormal"},
+    {low: 255, high: 290, value: "Paranormal"},
     {low: 290, high: 330, value: "Enchanted"},
+    {low: 345, high: 360, value: "Blood"},
   ];
   
   for (let i = 0; i < HUES_TABLE.length; i++) {
     const range = HUES_TABLE[i];
-    if (hsl[0] >= range.low && hsl[0] <= range.high) {
+    if (hue >= range.low && hue <= range.high) {
       // This means it is in the proper hue range, but
       // we also need to check that the saturation or
       // lightness aren't too low.
-      if (hsl[1] > 40 && hsl[2] > 40) {
+      if (sat + li > 40) {
         return range.value;
       }
     }
   }
   
+  if (li < 40) {
+    return "Dark";
+  }
   return null;
 }
 
@@ -144,41 +149,50 @@ export function createRandomSpirit(seed) {
   /* [===== =========================== =====] */
   /* Random color and associated type creation */
 
-  // First, we define a function that returns a number between 52 and 256.
-  // This is one r, g or b component of a color. Min is 52 arbitrarily, just worked out.
-  const comp = function() { return random(52, 256) }
-  const darkFactor = random(20, 50); // Arbitrary numbers
-  // Second, we define a function that will take some rgb color component and return
+  // For hue, any value will work. For saturation, we don't want anything to desaturated, 
+  // so we set a minimum. Finally, for lightness, we want to keep spirits bright and colorful,
+  // so we set a minimum lightness and just handle making some dark spirits later seperately.
+  const hue = random(0, 360);
+  let saturation = random(60, 100);
+  let lightness = random(50, 100);
+  const darkFactor = random(70, 80) / 100;
+
+  // Correction for spirits that are too bright:
+  while (lightness + saturation > 120) {
+    lightness *= 0.9;
+  }
+
+  // Add in a chance of dark spirits:
+  if (rand() < 0.1) {
+    lightness /= 2;
+    saturation /= 4;
+  }
+
+  // We then need to convert this HSL to RGB.
+  const rgb = hslToRgb(hue, saturation, lightness);
+  const dark = hslToRgb(hue, saturation, lightness * darkFactor);
+
+  // We also need a function that will take some rgb color component and return
   // the same value in hexadecimal, with a guarantee that it has two digits (pads if needed).
   const compToHex = function(comp) {
-    const hex = comp.toString(16);
+    const hex = comp.toString(16).split('.')[0];
     return (hex.length === 1) ? "0" + hex : hex;
   }
   
-  const r = comp(); const b = comp(); const g = comp();
-  const dr = r - darkFactor; const dg = g - darkFactor; const db = b - darkFactor;
-  // Above line is just a linear darkening. Not pretty, but ok for now.
+  const lightColor = "#" + compToHex(rgb[0]) + compToHex(rgb[1]) + compToHex(rgb[2]);
+  const darkColor = "#" + compToHex(dark[0]) + compToHex(dark[1]) + compToHex(dark[2]);
 
-  const lightColor = "#" + compToHex(r) + compToHex(g) + compToHex(b);
-  const darkColor = "#" + compToHex(dr) + compToHex(dg) + compToHex(db);
-
-  const hsl = rgbToHsl(r, g, b);
-  let type = getHueType(hsl);
-  if (hsl[2] < 30 && !type) {
-    type = "Dark";
-  }
-
-  console.log(hsl);
+  let type = getHueType(hue, saturation, lightness);
 
   /* [===== ========= =====] */
   /* Spirit stats generation */
 
   // Multiply by random(x, y) for some variance in points, the numbers are arbitrary.
-  let points = random(80, 120) * (level + (MAX_LEVEL / 3));
+  let points = random(80, 120) * (level + (MAX_LEVEL / 2));
   let HP = 0; let ATK = 0;
   while (points > 0) {
-    const amount = random(1, Math.max(5, Math.floor(points / 3))); // Seems to increase randomness of stat spread...
-    if (rand() < 0.6) { // 0.6 is arbitrary, but we want generally want HP >> ATK to avoid one-shotting.
+    const amount = random(1, Math.max(5, Math.floor(points / 9))); // Seems to increase randomness of stat spread...
+    if (rand() < 0.7) { // # is arbitrary, but we want generally want HP >> ATK to avoid one-shotting.
       HP += amount;
     } else {
       ATK += amount;
@@ -218,7 +232,7 @@ export function createRandomSpirit(seed) {
   /* [===== ============================ =====] */
   /* Sprite array creation process starts here: */
   
-  let spriteSize = level * 2 + 4;
+  let spriteSize = level * 2 + 4; // let spriteSize = Math.max(8, Math.min(12, level * 2 + 4));
   // We start with a square 2d array filled with zeroes, that is half of a 
   // spriteSize x spriteSize square. This way we can copy it for symmetry later.
   const sprite = new Array(spriteSize).fill(0).map(() => new Array(spriteSize / 2).fill(0));
@@ -231,10 +245,12 @@ export function createRandomSpirit(seed) {
   }
 
   // This is the meat of the sprite creation process. This idea is based on the
-  // Game of Life; any live cell with at least 2 live neighbors lives, any dead cell
-  // with less than 3 live neighbors comes alive. The numbers 2 and 3 are arbitrary, 
-  // I chose them just from fiddling around and keeping what worked best.
-  const iterations = random(0, 3);
+  // Game of Life. The one modification is to the requirements for dead cells to come
+  // alive, as the original Game of Life rules would result in some empty sprites. As such,
+  // the rules are any live cell with at least two live neighbors lives, any dead cell
+  // with less than 3 live neighbors comes alive.
+  
+  const iterations = 10 - level;
   for (let itr = 0; itr < iterations; itr++) {
     for (let i = 0; i < spriteSize; i++) {
       for (let j = 0; j < spriteSize / 2; j++) {
@@ -248,7 +264,7 @@ export function createRandomSpirit(seed) {
             }
           }
         }
-  
+
         if ((alive && liveNeighbors > 1 && liveNeighbors < 4) || (!alive && liveNeighbors < 3)) {
           sprite[i][j] = 1;
         } else {
@@ -265,7 +281,7 @@ export function createRandomSpirit(seed) {
   for (let i = 0; i < spriteSize; i++) {
     sprite[i] = sprite[i].concat(flipped[i]);
   }
-  const diff = 2 + (MAX_LEVEL - level);
+  const diff = 2 + (MAX_LEVEL - level); // const diff = Math.max(2, Math.min(12, 12 - spriteSize));
   padArray(sprite, diff); spriteSize += diff*2;
 
   // Finally, we just need to give the sprite an outline. We do this by iterating

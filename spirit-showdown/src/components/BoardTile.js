@@ -1,5 +1,6 @@
 import { Component } from 'react';
-import { ability_descriptions } from '../assets/abilities.js';
+import { buildSprite } from './buildSprite';
+import StatsCard from './StatsCard.js';
 import './Components.css';
 
 export default class BoardTile extends Component {
@@ -68,37 +69,17 @@ export default class BoardTile extends Component {
     }
     /* ===== */
 
-    const sprite = [];
-    const abilities = [];
+    const sprite = (this.props.spirit) ? buildSprite(this.props.spirit, blankTile, fillTile) : [];
     const valid = [];
-    let boost = null;
     if (this.props.spirit) {    
-      // build up the sprite from the array tile by tile
-      for (let i = 0; i < this.props.spirit.sprite.length; i++) {
-        const row = [];
-        for (let j = 0; j < this.props.spirit.sprite[i].length; j++) {
-          const color = (this.props.spirit.sprite[i][j] === 1) ? this.props.spirit.lightColor : this.props.spirit.darkColor;
-          const tile = (this.props.spirit.sprite[i][j] === 0) ? blankTile(i, j) : fillTile(i, j, color);
-          row.push(tile);
-        }
-        sprite.push(<div key={`st-sprite-row<${i}>`} style={{ display: 'flex', flexDirection: 'row', margin: 0 }}>{row}</div>);
-      }
-    
-      for (let i = 0; i < this.props.spirit.abilities.length; i++) {
-        abilities.push(
-          <p>
-            <strong>{this.props.spirit.abilities[i]}</strong><br />
-            {ability_descriptions[this.props.spirit.abilities[i]]}
-          </p>
-        );
-      }
-
       if (!this.props.enemy && this.props.selected) {
         const maxDist = 
-          this.props.spirit.abilities.includes('Speedster') ? 4 :
-          this.props.spirit.abilities.includes('Tank') ? 2 : 3;
+          this.props.spirit.abilities.includes('Tank') ? 2 :
+          this.props.spirit.abilities.includes('Speedster') ? 4 : 3;
+
         for (let x = -maxDist; x < maxDist + 1; x++) {
           for (let y = -maxDist; y < maxDist + 1; y++) {
+
             if (!(x === 0 && y === 0) && (Math.abs(x) + Math.abs(y) <= maxDist)) {
               const selection = [this.props.pos[1] + x, this.props.pos[0] + y];
               if (!(selection[0] < 0 || selection[1] < 0 || selection[0] >= this.props.max[0] || selection[1] >= this.props.max[1])) {
@@ -115,14 +96,12 @@ export default class BoardTile extends Component {
                 );
               }
             }
+
           }
         }
       }
-
-      boost = this.props.spirit.dmg_boost * this.props.spirit.permanent_dmg_boost;
     }
 
-    
     return (
       <div 
       className={className} onClick={this.handleClick}
@@ -138,26 +117,7 @@ export default class BoardTile extends Component {
             <div className={((this.props.enemy) ? 'player-two' : 'player-one') + ' spirit-container'}>
               {sprite}
             </div>
-              <section className='card tooltip-card'>
-                <br/>
-                <h2>{this.props.spirit.name}</h2>
-                <h3>({this.props.spirit.tier} tier)</h3>
-                {abilities}
-                <p>
-                  <span>
-                    <strong>HP:&nbsp;</strong>{this.props.spirit.HP}
-                    {this.props.spirit.hp_boost !== 0 && <>&nbsp;(<strong>+{this.props.spirit.hp_boost}</strong>)</>}
-                  </span>
-                  <span>
-                    <strong>ATK:&nbsp;</strong>{this.props.spirit.ATK}
-                    {boost !== 1 && <>&nbsp;(<strong>x{boost}</strong>)</>}
-                  </span>
-                  <span><strong>SPD:&nbsp;</strong>{this.props.spirit.speed}</span>
-                  <br />
-                </p>
-                <div className="health-bar horizontal" style={{'--fill': (this.props.spirit.current_hp/this.props.spirit.HP)}}/>
-                <br/>
-              </section>
+              <StatsCard spirit={this.props.spirit} styleClass={'card tooltip-card'} showHealth={true}/>
             {valid}
           </>
         }

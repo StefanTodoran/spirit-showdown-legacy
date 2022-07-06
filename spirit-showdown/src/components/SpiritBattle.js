@@ -11,6 +11,13 @@ export default class SpiritBattle extends Component {
     });
   }
 
+  // Return whether or not the given spirit has the given effect.
+  hasEffect(effect) {
+    const spirit = (this.props.player_one) ? this.props.battle.player_one_spirit : this.props.battle.player_two_spirit;
+    const matches = spirit.effects.filter(e => e.effect === effect);
+    return matches.length !== 0;
+  }
+
   render() {
     const spirit = (this.props.player_one) ? this.props.battle.player_one_spirit : this.props.battle.player_two_spirit;
     const enemy = (this.props.player_one) ? this.props.battle.player_two_spirit : this.props.battle.player_one_spirit;
@@ -21,19 +28,15 @@ export default class SpiritBattle extends Component {
     if (this.props.player_one) {
       flashing.reverse();
     }
-    console.log("enemy", flashing[0], "me", flashing[1]);
 
     let canFlee = false;
     if (this.props.player_one && this.props.battle.initiator === "player_one" || 
       !this.props.player_one && this.props.battle.initiator === "player_two") {
-        canFlee = true;
+        canFlee = !enemy.abilities.includes("Demonic");
     }
 
     const enemyPrevMove = (this.props.player_one) ? this.props.battle.player_two_prev : this.props.battle.player_one_prev;
     const myPrevMove = (this.props.player_one) ? this.props.battle.player_one_prev : this.props.battle.player_two_prev;
-
-    const enemyBoost = Math.round(enemy.dmg_boost * enemy.permanent_dmg_boost * 100) / 100;
-    const myBoost = Math.round(spirit.dmg_boost * spirit.permanent_dmg_boost * 100) / 100;
     
     const enemyPopDist = (Math.random() * 600) - 300;
     const myPopDist = (Math.random() * 600) - 300;
@@ -48,7 +51,7 @@ export default class SpiritBattle extends Component {
               <p>
                 <strong>{enemy.current_hp + enemy.hp_boost}</strong> /{enemy.HP} HP
               </p>
-              {enemyBoost !== 1 && <p><strong>{enemyBoost}x</strong> ATK</p>}
+              {enemy.dmg_boost !== 1 && <p><strong>{enemy.dmg_boost}x</strong> ATK</p>}
               {flashing[0] > 0 && 
               <p className='popping-number damage' 
                 style={{"--horizontal": `${enemyPopDist}%`, "--rotation": Math.sign(enemyPopDist)}}>
@@ -71,7 +74,7 @@ export default class SpiritBattle extends Component {
               <p>
                 <strong>{spirit.current_hp + spirit.hp_boost}</strong> /{spirit.HP} HP
               </p>
-              {myBoost !== 1 && <p><strong>{myBoost}x</strong> ATK</p>}
+              {spirit.dmg_boost !== 1 && <p><strong>{spirit.dmg_boost}x</strong> ATK</p>}
               {flashing[1] > 0 && 
               <p className='popping-number damage' 
                 style={{"--horizontal": `${myPopDist}%`, "--rotation": Math.sign(myPopDist)}}>
@@ -85,12 +88,10 @@ export default class SpiritBattle extends Component {
             </div>
           </div>
           <section style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly' }}>
-            <button disabled={battleOver} onClick={() => { this.selectMove('attack') }} id="attack-button">
-              Attack</button>
-            <button disabled={battleOver} onClick={() => { this.selectMove('meditate') }} id="meditate-button">
-              Meditate</button>
-            <button disabled={battleOver} onClick={() => { this.selectMove('dodge') }} id="dodge-button">
-              Dodge</button>
+            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('attack') }} id="attack-button">Attack</button>
+            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('meditate') }} id="meditate-button">Meditate</button>
+            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('dodge') }} id="dodge-button">Dodge</button>
+            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('charge') }} id="charge-button">Charge</button>
             {canFlee && <button disabled={battleOver} onClick={ () => { this.selectMove('flee') } }>Flee</button>}
           </section>
         </div>
@@ -100,7 +101,8 @@ export default class SpiritBattle extends Component {
           {!this.props.queued && <p>Select a move</p>}
           {this.props.queued && <Loader text={"Waiting for opponent's move"}/>}
         </>}
-        {myPrevMove === 'flee' && <p>You successfully <strong>fled</strong></p>}
+        {myPrevMove === 'flee' && spirit.current_hp > 0 && <p>You successfully <strong>fled</strong></p>}
+        {myPrevMove === 'flee' && spirit.current_hp === 0 && <p>You failed to <strong>flee</strong></p>}
         {battleOver && <p>{(spirit.current_hp > 0) ? "You won!" : "You lost."}</p>}
       </>
     );

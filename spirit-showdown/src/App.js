@@ -1,31 +1,8 @@
 import { Component } from 'react';
-
 import Deck from './components/Deck';
 import MultiplayerHandler from './components/MultiplayerHandler';
 
 import './App.css';
-
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDsCH0P70TIY7BfQqP3UrMX43Ug6tbVBfw",
-  authDomain: "spirit-showdown.firebaseapp.com",
-  projectId: "spirit-showdown",
-  storageBucket: "spirit-showdown.appspot.com",
-  messagingSenderId: "725959100289",
-  appId: "1:725959100289:web:b6b8482d48cd53a8118a80",
-  measurementId: "G-RJ4DM0YQFB"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
 export class App extends Component {
   state = {
@@ -127,7 +104,7 @@ export class App extends Component {
                 {this.state.page === 'create' && <button onClick={() => { this.setState({ page: 'play' }); }}>Join existing lobby</button>}
               </div>}
               <MultiplayerHandler page={this.state.page} deck={this.state.deck} 
-                startedCallback={() => { this.setState({ started: true }) }}/>
+                startedCallback={(started) => { this.setState({ started: started }) }}/>
             </>
           );
         };
