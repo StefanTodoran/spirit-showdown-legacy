@@ -3,11 +3,6 @@ import BoardTile from "./BoardTile";
 import './Components.css';
 
 export default class GameBoard extends Component {
-  onComponentWillRecieveProps(nextProps) {
-    console.log(this.props.tiles_board);
-    console.log(this.props.spirits_board);
-  }
-
   render() {
     const board = [];
     for (let i = 0; i < this.props.tiles_board.length; i++) {

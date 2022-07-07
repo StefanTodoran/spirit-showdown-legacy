@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { buildSprite } from './buildSprite';
+import { buildSprite } from './spriteUtilities';
 import StatsCard from './StatsCard.js';
 import './Components.css';
 
@@ -43,7 +43,7 @@ export default class SpiritTile extends Component {
       <div className={class_name} onClick={this.handleClick} 
         style={{...(this.props.dead ? {"--cooldown": `"${this.props.spirit.cooldown}"`} : {})}}>
         {sprite}
-        <StatsCard spirit={this.props.spirit} styleClass={'card hover-card'}/>
+        <StatsCard spirit={this.props.spirit} styleClass={'card hover-card'} horizontalStats={false}/>
       </div>
     );
   }

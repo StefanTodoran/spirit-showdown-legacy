@@ -171,6 +171,13 @@ want hovering it to count so we set pointer events to none. */
 .card::-webkit-scrollbar-thumb:hover {
   background: #ececec77;
 }
+
+/* Firefox styles, because those stupid baboons
+always have to do something differently... */
+.card {
+  scrollbar-width: thin;
+  scrollbar-color: #cccccc77 #00000000;
+}
 /* =========================== */
 
 
@@ -191,6 +198,7 @@ want hovering it to count so we set pointer events to none. */
   width: 8vmin;
   height: 8vmin;
 }
+
 .selected-tile {
   border: 2px solid black !important;
   width: calc(8vmin - 2px) !important;
@@ -322,39 +330,6 @@ want hovering it to count so we set pointer events to none. */
   animation-iteration-count: 3.5;
 }
 
-.heal-pixel {
-  animation: green_glow 1s forwards;
-  /* animation-iteration-count: 2; */
-}
-
-@keyframes green_glow {
-  0% {}
-  50% { 
-    background-color: #4fbe5c; 
-    border-color: #42a84e;
-  }
-  100% {}
-}
-
-.frozen-pixel {
-  animation: ice_pulse 1s infinite;
-}
-
-@keyframes ice_pulse {
-  0% { 
-    background-color: #9dfcff; 
-    border-color: #74eaee;  
-  }
-  50% { 
-    background-color: #c3fdff; 
-    border-color: #9cf2f5;
-  }
-  100% { 
-    background-color: #9dfcff; 
-    border-color: #74eaee;  
-  }
-}
-
 #attack-button:hover {
   animation: glint 2s infinite;
   --border-color: #ebb6a9;
@@ -433,9 +408,44 @@ want hovering it to count so we set pointer events to none. */
   }
 }
 
+/* Effect Styles */
+
+.heal-pixel {
+  animation: green_glow 1s forwards;
+  /* animation-iteration-count: 2; */
+}
+
+@keyframes green_glow {
+  0% {}
+  50% { 
+    background-color: #4fbe5c; 
+    border-color: #42a84e;
+  }
+  100% {}
+}
+
+.frozen-pixel {
+  animation: ice_pulse 1s infinite;
+}
+
+@keyframes ice_pulse {
+  0% { 
+    background-color: #9dfcff; 
+    border-color: #74eaee;  
+  }
+  50% { 
+    background-color: #c3fdff; 
+    border-color: #9cf2f5;
+  }
+  100% { 
+    background-color: #9dfcff; 
+    border-color: #74eaee;  
+  }
+}
+
 .fire-particle {
-  width: 5px;
-  height: 5px;
+  width: var(--size, 5px);
+  height: var(--size, 5px);
   background-color: #ee7137;
   border: 2px solid #f1abab;
   position: absolute;
@@ -447,11 +457,52 @@ want hovering it to count so we set pointer events to none. */
 
 @keyframes float-and-fade {
   0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  5% {
     transform: none;
     opacity: 1;
   }
   100% {
     transform: translateY(calc(-100px + var(--offset-y))) scale(0.1) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.dodge-text {
+  position: absolute;
+  top: 35%;
+  font-weight: bold;
+  font-size: x-large;
+  z-index: 1;
+
+  animation: blink 0.5s infinite, rise 1.5s linear infinite;
+  text-shadow: 0px 0px 10px #000;
+}
+
+@keyframes blink {
+  0% { 
+    color: rgb(65, 65, 65);
+  }
+  50% { 
+    color: lightgray;
+  }
+  100% { 
+    color: rgb(65, 65, 65);
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150%) scale(1.25);
     opacity: 0;
   }
 }

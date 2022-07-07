@@ -1,18 +1,12 @@
 import {Component} from 'react';
-import { buildSprite } from './buildSprite.js';
+import { buildSprite, createFire, hasEffect } from './spriteUtilities.js';
 import './Components.css';
 import StatsCard from './StatsCard.js';
 
 export default class Spirit extends Component {
-  // Return whether or not the given spirit has the given effect.
-  hasEffect(effect) {
-    const matches = this.props.spirit.effects.filter(e => e.effect === effect);
-    return matches.length !== 0;
-  }
-
   render() {
     let pixel_class = (this.props.flashing < 0) ? 'heal-pixel' : '';
-    if (this.hasEffect("Frozen")) {
+    if (hasEffect(this.props.spirit, "Frozen")) {
       pixel_class += ' frozen-pixel';
     }
 
@@ -38,25 +32,13 @@ export default class Spirit extends Component {
     /* ===== */
 
     const sprite = (this.props.spirit) ? buildSprite(this.props.spirit, blankTile, fillTile) : [];
-
-    const fire = [];
-    if (this.hasEffect("Burning")) {
-      for (let i = 0; i < 15; i++) {
-        fire.push(
-          <div key={`fire-particle<${i}>`} className={'fire-particle'} 
-            style={{
-              "--distance": Math.random() * 100, "--delay": `${Math.random() - 0.5}s`,
-              "--offset-x": `${Math.random() * 100 - 50}px`, "--offset-y": `${Math.random() * 100 - 50}px`,
-            }}
-          />
-        );
-      }
-    }
+    const fire = createFire(this.props.spirit, 15, 100);
 
     return (
-      <div className={(this.props.flashing > 0) ? 'deck flashing-sprite' : 'deck'}>
+      <div className={(this.props.flashing > 0) ? 'deck flashing-sprite' : 'deck'} style={{overflow: 'hidden'}}>
         {sprite}{fire}
         <StatsCard spirit={this.props.spirit} styleClass={'card cover-card'}/>
+        {this.props.dodged && <p className='dodge-text'>MISS</p>}
       </div>
     );
   }

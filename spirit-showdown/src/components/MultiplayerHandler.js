@@ -75,7 +75,7 @@ export default class MultiplayerHandler extends Component {
       this.setState({ game_state: game_state, battle_events: battle_events, battle_move_queued: false });
       setTimeout(() => {
         this.setState({ battle_events: null });
-      }, 2000);
+      }, 1500);
     });
 
     socket.on('state-update:battle+move', (game_state) => {

@@ -405,7 +405,8 @@ function getEffect(spirit, effect) {
     },
     "Frozen": {
       effect: "Frozen",
-      duration: 2,
+      duration: 1,
+      display: true, // indicates to client whether to display or not
     },
     "Hydrated": {
       effect: "Hydrated",
@@ -419,17 +420,27 @@ function getEffect(spirit, effect) {
     "Combo": {
       effect: "Combo",
       dmg_boost: .75,
-      one_time: true,
+      used: false, // lasts one use, when that use occurs does not matter
     },
     "Charged": {
       effect: "Charged",
       dmg_boost: 0,
-      used: false, // lasts one use, when that use occurs does not matter
+      one_time: true,
     },
     "Burning": {
       effect: "Burning",
       duration: 5, // number of turns the effect lasts
       dmg: 35, // amount of damage taken per turn
+    },
+    "Turtle": {
+      effect: "Turtle",
+      unmoved: 0, // number of turns the spirit has not moved
+      display: false,
+    },
+    "Arsonist": {
+      effect: "Arsonist",
+      kills: 0,
+      dmg_boost: 0,
     },
     // "Cursed": {
     //   effect: "Cursed",
@@ -484,6 +495,14 @@ function doSpiritMove(game, spirit, destination) {
     if (type !== 'water' && hasEffect(spirit, "Hydrated")) {
       deleteEffect(spirit, "Hydrated");
     }
+    if (spirit.abilities.includes("Turtle")) {
+      const effect = getEffect(spirit, "Turtle")
+      effect.unmoved = 0;
+      effect.display = false;
+    }
+    if (type === 'water' && hasEffect(spirit, "Burning")) {
+      deleteEffect(spirit, "Burning");
+    }
 
     updateSpiritPosition(game, spirit, true_dest);
     return true;
@@ -527,8 +546,6 @@ function doBattleTurn(game, battle) {
     battle.player_two_move, battle.initiator === 'player_two');
   // res is [damage, incoming, direct]
 
-  console.log(res_1, res_2);
-
   // Finally, we do damage calculations and update the HPs.
   const hit_1 = enactHealthChange(battle.player_one_spirit, res_1, res_2);
   const hit_2 = enactHealthChange(battle.player_two_spirit, res_2, res_1);
@@ -553,10 +570,10 @@ function doBattleTurn(game, battle) {
   // Clear the moves and return the battle events.
   battle.player_one_move = null; battle.player_two_move = null;
   return [
-    // battle.player_one_spirit.current_hp < starting_hp_1,
-    // battle.player_two_spirit.current_hp < starting_hp_2,
     starting_hp_1 - battle.player_one_spirit.current_hp,
     starting_hp_2 - battle.player_two_spirit.current_hp,
+    res_1[1] === 0, // if this is zero, the spirit successuflly dodged 
+    res_2[1] === 0, // this is used for animations on the client side
   ];
 }
 
@@ -593,9 +610,13 @@ function calcModifiersHelper(spirit, enemy, curr_move, initiator) {
     incoming *= 0.75;
   }
 
-  if (hasEffect(spirit, "Burning")) {
-    direct -= getEffect(spirit, "Burning").dmg;
+  if (spirit.abilities.includes("Turtle") && getEffect(spirit, "Turtle").unmoved > 5) {
+    incoming *= 0.5;
   }
+
+  // if (hasEffect(spirit, "Burning")) {
+  //   direct -= getEffect(spirit, "Burning").dmg;
+  // }
 
   if (spirit.type === "Marine" && enemy.abilities.includes("Sushi Chef")) {
     incoming *= 1.25;
@@ -614,6 +635,10 @@ function calcModifiersHelper(spirit, enemy, curr_move, initiator) {
     }
 
     if (initiator && spirit.abilities.includes("Aggresive")) {
+      damage *= 1.5;
+    }
+
+    if (spirit.abilities.includes("Heat Wave") && hasEffect(enemy, "Burning")) {
       damage *= 1.5;
     }
 
@@ -683,17 +708,28 @@ function handleHitEffects(spirit, enemy, enemy_hit) {
   if (enemy_hit) {
     if (spirit.abilities.includes("Flaming") || spirit.abilities.includes("Arsonist")) {
       if (Math.random() < 0.3) {
-        const effect = getEffect(enemy, "Burning");
-        effect.duration = randInt(2, 5);
-        effect.damage = randInt(0.1 * spirit.ATK, 0.2 * spirit.ATK);
+        const debuff = getEffect(enemy, "Burning");
+        debuff.duration = randInt(2, 5);
+        debuff.damage = randInt(0.1 * spirit.ATK, 0.2 * spirit.ATK);
+
+        if (spirit.abilities.includes("Arsonist")) {
+          const boost = getEffect(spirit, "Arsonist");
+          boost.kills++;
+          boost.dmg_boost += 0.1;
+        }
       }
     }
 
     if (spirit.abilities.includes("Arctic")) {
-      if (Math.random() < 0.3) {
-        const effect = getEffect(enemy, "Frozen");
-        effect.duration = randInt(1, 2);
+      if (Math.random() < 0.25) {
+        getEffect(enemy, "Frozen");
       }
+    }
+
+    if (spirit.abilities.includes("Heat Wave") && hasEffect(spirit, "Charged") && getEffect(spirit, "Charged").used) {
+      const effect = getEffect(enemy, "Burning");
+        effect.duration = randInt(3, 5);
+        effect.damage = randInt(0.1 * spirit.ATK, 0.25 * spirit.ATK);
     }
   }
 }
@@ -735,6 +771,7 @@ function addToGraveyardHelper(game, spirit) {
   if (spirit.current_hp === 0) {
     game.graveyard.push(spirit);
     spirit.cooldown = 25 - spirit.SPD;
+    spirit.effects = [];
     
     updateSpiritPosition(game, spirit, null);
     return true;
@@ -765,18 +802,27 @@ function updateGraveyard(game) {
 }
 
 // Loops over all spirits currently on the board and updates various stats.
-// If they have turn based effects, those occur if (changed === true). Other calculations,
+// If they have turn based effects, those occur if (turn === true). Other calculations,
 // like updating the spirit.dmg_boost, are done regardless.
-function boardUpdate(game, changed) {
+function boardUpdate(game, turn) {
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
       const spirit = game.spirits_board[y][x];
       if (spirit) {
 
-        if (spirit.abilities.includes("Regenerating") && changed) {
+        if (spirit.abilities.includes("Regeneration")) {
           if (spirit.current_hp < spirit.HP) {
             spirit.current_hp = boundHealth(spirit, spirit.current_hp + (spirit.HP * 0.1));
           }
+        }
+
+        if (spirit.abilities.includes("Turtle") && turn) {
+          const effect = getEffect(spirit, "Turtle");
+          if (spirit.current_hp < spirit.HP && effect.unmoved > 5) {
+            spirit.current_hp = boundHealth(spirit, spirit.current_hp + (spirit.HP * 0.1));
+          }
+          effect.display = effect.unmoved > 5;
+          effect.unmoved++;
         }
 
         if (spirit.abilities.includes("Rage")) {
@@ -784,24 +830,33 @@ function boardUpdate(game, changed) {
           getEffect(spirit, "Rage").dmg_boost = Math.min(multiplier, 8);
         }
         
-        spirit.dmg_boost = 1;
+        spirit.dmg_boost = 1; 
+        const to_delete = [];
         for (let i = 0; i < spirit.effects.length; i++) {
           const effect = spirit.effects[i];
           if (effect.dmg_boost) {
             spirit.dmg_boost += effect.dmg_boost;
           }
-          if ((effect.one_time && changed) || (effect.used && changed)) {
-            deleteEffect(spirit, effect.effect);
+          if ((effect.one_time) || (effect.used)) {
+            to_delete.push(effect.effect);
           }
           if (typeof effect.duration === "number") {
             if (effect.duration === 0) {
-              deleteEffect(spirit, effect.effect);
+              to_delete.push(effect.effect);
             } else {
               effect.duration--;
+              if (effect.dmg) {
+                spirit.current_hp = boundHealth(spirit, spirit.current_hp - effect.dmg);
+              }
             }
           }
         }
         spirit.dmg_boost = Math.round(spirit.dmg_boost * 100) / 100; // Rounds to 2 decimal
+
+        // We have to delete seperately because we can't modify the array while iterating over it.
+        for (let i = 0; i < to_delete.length; i++) {
+          deleteEffect(spirit, to_delete[i]);
+        }
 
         refreshReference(game, spirit);
       }
@@ -963,7 +1018,7 @@ io.on('connection', (socket) => {
     // First, we figure out if this is a spirit being deployed from the players hand, 
     // or simply moving on the board. Tiles in the players hand have a position of null.
 
-    if (spirit.position) {
+    if (spirit.position && !hasEffect(spirit, "Frozen")) {
       // This means the spirit is on the board. The next step is therefore
       // to check if the move is valid, e.g. within range & to a walkable tile.
 
@@ -1102,7 +1157,6 @@ io.on('connection', (socket) => {
       // If both players have made their moves, we can start do the turn logic.
       if (turnReady()) {
         const events = doBattleTurn(game, game.battle);
-        boardUpdate(game, true);
         io.in(lobby_id).emit('battle-update', game, events);
       }
     }

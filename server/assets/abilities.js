@@ -79,7 +79,6 @@ export const ability_descriptions = {
   "Turtle"        : "After 5 or more turns of not moving, spirit gains regeneration & resistance. Boost is lost on movement.",
   "Undying"       : "Upon getting KOed on an empty tile, spirit is stunned rather than being removed from the battlefield.",
   "Rooted"        : "Spirit gets an large stat boost when adjacent to a water tile, at the cost of a lower dodge chance.",
-  "Heat Wave"     : "Spirit deals massive damage to burning spirits. After combat, enemy spirits are set on fire.",
   "Revenge"       : "If ALL allied spirits are KOed and respawning, resistance & damage are massively increased.",
   "Swapper"       : "During the movement phase, spirit can swap places with any surrounding allied spirit.",
   "Farmer"        : "Nature type spirits within 2 tiles regenerate HP every turn and get a damage boost.",
@@ -94,21 +93,22 @@ export const ability_descriptions = {
   
   "Electric"      : "Spirit can walk on water tiles. Every turn, it and all other spirits in connected water tiles will take damage.", // PARTIAL IMPLEMENTATION
   "Esper"         : "Spirit can use portal tiles. Spirit can give up its movement phase to curse another spirit for 1 to 2 turns.", // PARTIAL IMPLEMENTATION
+  "Arsonist"      : "Attacks can light enemies ablaze. Gains a damage boost for every succesfully burn.", // PARTIAL IMPLEMENTATION
   "Wraith"        : "Dodge chance is increased. Allied spirits can pass through this spirit.", // PARTIAL IMPLEMENTION
   "Octopus"       : "Spirit can walk on water tiles and has increased attack range.", // PARTIAL IMPLEMENTATION
   "Flying"        : "Flying spirits can fly over other spirits and water tiles.", // PARTIAL IMPLEMENTATION
   
+  "Heat Wave"     : "Spirit deals massive damage to burning spirits. Charge attacks set enemy spirits on fire.", // IMPLEMENTED
   "Wildcard"      : "During combat, spirit's random damage variation is increased (and skewed positive).", // IMPLEMENTED
-  "Arsonist"      : "Attacks can light enemies ablaze. Gains a damage boost for every succesfully burn.",
   "Amphibious"    : "Spirit can walk on water tiles and gets resistance & damage boost in water.", // IMPLEMENTED
   "Nuker"         : "Charge attacks do extra damage. Meditation damage resistance reduced.", // IMPLEMENTED
   "Defensive"     : "Spirit has an incoming damage reduction when defending in combat.", // IMPLEMENTED
   "Regenerating"  : "Spirit passively regenerates health each turn and during battle.", // IMPLEMENTED
   "Leaping"       : "Spirit can leap obstacle tiles as well as moving normally.", // IMPLEMENTED
   "Rampage"       : "Spirit gets a damage boost for every KO. Resets on death.", // IMPLEMENTED
-  "Arctic"        : "Succesful attacks have a chance to freeze enemy spirits.", 
+  "Arctic"        : "Succesful attacks have a chance to freeze enemy spirits.",  // IMPLEMENTED
   "Rage"          : "Spirit's damage increases as it gets closer to death.", // IMPLEMENTED
-  "Flaming"       : "Attacks have a chance to light enemy spirits on fire.",
+  "Flaming"       : "Attacks have a chance to light enemy spirits on fire.", // IMPLEMENTED
   "Tank"          : "Incoming damage is halved. Movement range is reduced.", // IMPLEMENTED
   "Plague"        : "During combat, enemy spirit takes damage each turn.", // IMPLEMENTED
   "Aggresive"     : "Spirit has a damage boost when attacking in combat.", // IMPLEMENTED

@@ -23,10 +23,13 @@ export default class SpiritBattle extends Component {
     const enemy = (this.props.player_one) ? this.props.battle.player_two_spirit : this.props.battle.player_one_spirit;
 
     const battleOver = spirit.current_hp === 0 || enemy.current_hp === 0;
+    const disabled = battleOver || this.hasEffect("Frozen") || this.props.events;
 
-    let flashing = (this.props.events !== null) ? this.props.events : [false, false];
+    let flashing = (this.props.events !== null) ? [this.props.events[0], this.props.events[1]] : [false, false];
+    let dodges = (this.props.events !== null) ? [this.props.events[2], this.props.events[3]] : [false, false];
     if (this.props.player_one) {
       flashing.reverse();
+      dodges.reverse();
     }
 
     let canFlee = false;
@@ -46,7 +49,7 @@ export default class SpiritBattle extends Component {
           padding: 10, margin: 10, display: 'flex', flexDirection: 'row' }}>
           <div className="health-bar" style={{'--fill': (enemy.current_hp/enemy.HP)}}/>
           <div>
-            <Spirit spirit={enemy} flashing={flashing[0]}/>
+            <Spirit spirit={enemy} flashing={flashing[0]} dodged={dodges[0]}/>
             <div className="spirit-stats">
               <p>
                 <strong>{enemy.current_hp + enemy.hp_boost}</strong> /{enemy.HP} HP
@@ -69,7 +72,7 @@ export default class SpiritBattle extends Component {
           padding: 10, margin: 10, display: 'flex', flexDirection: 'row' }}>
           <div className="health-bar" style={{'--fill': (spirit.current_hp/spirit.HP)}}/>
           <div>
-            <Spirit spirit={spirit} flashing={flashing[1]}/>
+            <Spirit spirit={spirit} flashing={flashing[1]} dodged={dodges[1]}/>
             <div className="spirit-stats">
               <p>
                 <strong>{spirit.current_hp + spirit.hp_boost}</strong> /{spirit.HP} HP
@@ -88,11 +91,11 @@ export default class SpiritBattle extends Component {
             </div>
           </div>
           <section style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly' }}>
-            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('attack') }} id="attack-button">Attack</button>
-            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('meditate') }} id="meditate-button">Meditate</button>
-            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('dodge') }} id="dodge-button">Dodge</button>
-            <button disabled={battleOver || this.hasEffect("Frozen")} onClick={() => { this.selectMove('charge') }} id="charge-button">Charge</button>
-            {canFlee && <button disabled={battleOver} onClick={ () => { this.selectMove('flee') } }>Flee</button>}
+            <button disabled={disabled} onClick={() => { this.selectMove('attack') }} id="attack-button">Attack</button>
+            <button disabled={disabled} onClick={() => { this.selectMove('meditate') }} id="meditate-button">Meditate</button>
+            <button disabled={disabled} onClick={() => { this.selectMove('dodge') }} id="dodge-button">Dodge</button>
+            <button disabled={disabled} onClick={() => { this.selectMove('charge') }} id="charge-button">Charge</button>
+            {canFlee && <button disabled={disabled} onClick={ () => { this.selectMove('flee') } }>Flee</button>}
           </section>
         </div>
         {enemyPrevMove && myPrevMove !== 'flee' && <p style={{marginBottom: 0}}>Opponent used <strong>{enemyPrevMove}</strong></p>}

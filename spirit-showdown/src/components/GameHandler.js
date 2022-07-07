@@ -28,6 +28,10 @@ export default class GameHandler extends Component {
             y = e.clientY;
         cards[i].style.top = Math.min(window.innerHeight - bounds.height - 20, y + 25) + 'px';
         cards[i].style.left = Math.min(window.innerWidth - bounds.width - 20, x + 20) + 'px';
+
+        if (y + 25 + bounds.height > window.innerHeight) {
+          cards[i].style.top = y - 10 - bounds.height + 'px';
+        }
       }
     };
     window.onmousemove = setPositions;

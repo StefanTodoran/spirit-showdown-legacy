@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { buildSprite } from './buildSprite';
+import { buildSprite, createFire, hasEffect } from './spriteUtilities';
 import StatsCard from './StatsCard.js';
 import './Components.css';
 
@@ -9,7 +9,6 @@ export default class BoardTile extends Component {
   }
 
   handleClick = () => {
-    console.log(this.props.id);
     this.props.selectCallback(this.props.id);
   }
 
@@ -65,11 +64,13 @@ export default class BoardTile extends Component {
         borderRight: `1px solid ${color}`,
         borderBottom: `1px solid ${color}`,
         backgroundColor: color,
-      }} />
+      }} className={hasEffect(this.props.spirit, "Frozen") ? 'frozen-pixel' : ''}/>
     }
     /* ===== */
 
     const sprite = (this.props.spirit) ? buildSprite(this.props.spirit, blankTile, fillTile) : [];
+    const fire = (this.props.spirit) ? createFire(this.props.spirit, 10, 40, 2) : [];
+
     const valid = [];
     if (this.props.spirit) {    
       if (!this.props.enemy && this.props.selected) {
@@ -115,9 +116,9 @@ export default class BoardTile extends Component {
         {this.props.spirit &&
           <>
             <div className={((this.props.enemy) ? 'player-two' : 'player-one') + ' spirit-container'}>
-              {sprite}
+              {sprite}{fire}
             </div>
-              <StatsCard spirit={this.props.spirit} styleClass={'card tooltip-card'} showHealth={true}/>
+              <StatsCard spirit={this.props.spirit} styleClass={'card tooltip-card'} showHealth={true} horizontalStats={true} showEffects={true}/>
             {valid}
           </>
         }
