@@ -1,15 +1,16 @@
 {
   "files": {
-    "main.css": "/spirit-showdown/static/css/main.1a43f067.css",
-    "main.js": "/spirit-showdown/static/js/main.44a5d27a.js",
+    "main.css": "/spirit-showdown/static/css/main.0383f0dd.css",
+    "main.js": "/spirit-showdown/static/js/main.f95ce37d.js",
     "static/js/787.6a3a5f8b.chunk.js": "/spirit-showdown/static/js/787.6a3a5f8b.chunk.js",
+    "static/media/click.wav": "/spirit-showdown/static/media/click.c26a9c6bc972f5f4f418.wav",
     "index.html": "/spirit-showdown/index.html",
-    "main.1a43f067.css.map": "/spirit-showdown/static/css/main.1a43f067.css.map",
-    "main.44a5d27a.js.map": "/spirit-showdown/static/js/main.44a5d27a.js.map",
+    "main.0383f0dd.css.map": "/spirit-showdown/static/css/main.0383f0dd.css.map",
+    "main.f95ce37d.js.map": "/spirit-showdown/static/js/main.f95ce37d.js.map",
     "787.6a3a5f8b.chunk.js.map": "/spirit-showdown/static/js/787.6a3a5f8b.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.1a43f067.css",
-    "static/js/main.44a5d27a.js"
+    "static/css/main.0383f0dd.css",
+    "static/js/main.f95ce37d.js"
   ]
 }
