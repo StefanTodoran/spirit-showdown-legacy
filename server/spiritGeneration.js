@@ -188,7 +188,7 @@ export function createRandomSpirit(seed) {
   /* Spirit stats generation */
 
   // Multiply by random(x, y) for some variance in points, the numbers are arbitrary.
-  let points = random(80, 120) * (level + (MAX_LEVEL / 2));
+  let points = random(80, 120) * ((level + MAX_LEVEL) / 2);
   let HP = 0; let ATK = 0;
   while (points > 0) {
     const amount = random(1, Math.max(5, Math.floor(points / 9))); // Seems to increase randomness of stat spread...
@@ -222,7 +222,7 @@ export function createRandomSpirit(seed) {
       const new_ability = pool[random(0, pool.length)];
       if (!abilities.includes(new_ability)) {
         abilities.push(new_ability);
-        chance *= 0.8;
+        chance *= 0.6;
       } else {
         i--; // If it would be a duplicate, try again.
       }

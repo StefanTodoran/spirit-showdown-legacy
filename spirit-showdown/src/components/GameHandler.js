@@ -111,6 +111,14 @@ export default class GameHandler extends Component {
 
   render() {
     const hand = (this.props.player_id === this.props.gameState.player_one) ? this.props.gameState.player_one_hand : this.props.gameState.player_two_hand;
+    const actions = () => {
+      if (this.props.gameState.actions.length === 0) {
+        return "Two actions remaining";
+      } else {
+        return "One action remaining";
+      }
+    }
+    
     return (
       <>
         {!this.state.inBattle && <>
@@ -131,7 +139,14 @@ export default class GameHandler extends Component {
             player={this.props.player_id}
             display={false}
           />
-          {this.props.gameState.turn === this.props.player_id && <p>Your turn to play</p>}
+          {this.props.gameState.turn === this.props.player_id && 
+          <>
+            <p style={{textAlign: "center"}}>
+              Your turn to play<br/>
+              {actions()}
+            </p>
+          </>
+          }
           {this.props.gameState.turn !== this.props.player_id && <Loader text={"Waiting for opponent's move"}/>}
         </>}
         {this.state.inBattle && <>

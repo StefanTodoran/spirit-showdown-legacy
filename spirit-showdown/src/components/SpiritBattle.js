@@ -1,10 +1,20 @@
 import { Component } from "react";
-import { createRandomSpirit } from "../spiritGeneration";
 import Spirit from "./Spirit";
 import Loader from "./Loader";
 
 export default class SpiritBattle extends Component {
+  constructor(props) {
+    super(props);
+  
+    this.state = {
+      buttonSound: new Audio(require('../assets/click.wav')),
+      // healSound: new Audio(require('../assets/heal.wav')),
+      // hitSounds: [new Audio(require('../assets/hit_1.wav')), new Audio(require('../assets/hit_2.wav')), new Audio(require('../assets/hit_3.wav'))],
+    }
+  }
+
   selectMove(move) {
+    this.state.buttonSound.play();
     this.props.battleMoveCallback(move);
     this.setState({
       selected: move,
@@ -16,6 +26,15 @@ export default class SpiritBattle extends Component {
     const spirit = (this.props.player_one) ? this.props.battle.player_one_spirit : this.props.battle.player_two_spirit;
     const matches = spirit.effects.filter(e => e.effect === effect);
     return matches.length !== 0;
+  }
+
+  handleSounds(change) {
+    if (change > 0) { // damage
+      this.state.hitSounds[Math.floor(Math.random() * this.state.hitSounds.length)].play();
+    }
+    if (change < 0) { // heal
+      this.state.healSound.play();  
+    }
   }
 
   render() {
@@ -31,6 +50,8 @@ export default class SpiritBattle extends Component {
       flashing.reverse();
       dodges.reverse();
     }
+
+    // this.handleSounds(flashing[1]);
 
     let canFlee = false;
     if (this.props.player_one && this.props.battle.initiator === "player_one" || 
@@ -68,6 +89,7 @@ export default class SpiritBattle extends Component {
             </div>
           </div>
         </div>
+        
         <div style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '5px', 
           padding: 10, margin: 10, display: 'flex', flexDirection: 'row' }}>
           <div className="health-bar" style={{'--fill': (spirit.current_hp/spirit.HP)}}/>
@@ -90,6 +112,7 @@ export default class SpiritBattle extends Component {
               </p>}
             </div>
           </div>
+
           <section style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly' }}>
             <button disabled={disabled} onClick={() => { this.selectMove('attack') }} id="attack-button">Attack</button>
             <button disabled={disabled} onClick={() => { this.selectMove('meditate') }} id="meditate-button">Meditate</button>
@@ -98,10 +121,12 @@ export default class SpiritBattle extends Component {
             {canFlee && <button disabled={disabled} onClick={ () => { this.selectMove('flee') } }>Flee</button>}
           </section>
         </div>
+
         {enemyPrevMove && myPrevMove !== 'flee' && <p style={{marginBottom: 0}}>Opponent used <strong>{enemyPrevMove}</strong></p>}
         {/* {myPrevMove && <p style={{fontSize: 12, marginTop: 0}}>You used <em>{myPrevMove}</em></p>} */}
         {!battleOver && (enemyPrevMove !== 'flee' && myPrevMove !== 'flee') && <>
-          {!this.props.queued && <p>Select a move</p>}
+          {!disabled && !this.props.queued && <p>Select a move</p>}
+          {this.hasEffect("Frozen") && <p>You are <strong>frozen</strong>!</p>}
           {this.props.queued && <Loader text={"Waiting for opponent's move"}/>}
         </>}
         {myPrevMove === 'flee' && spirit.current_hp > 0 && <p>You successfully <strong>fled</strong></p>}

@@ -11,7 +11,7 @@
 /* Spirit styles */
 .deck {
   background-color: white;
-  border: 1px solid black;
+  border: 1px solid rgb(121, 121, 121);
   border-radius: 5px;
   margin: 10px;
   display: flex;
@@ -505,4 +505,91 @@ always have to do something differently... */
     transform: translateY(-150%) scale(1.25);
     opacity: 0;
   }
+}
+
+/* =================== */
+
+
+
+/* Demo Styles */
+.demo.tile {
+  width: calc(4vmin + 2px);
+  height: calc(4vmin + 2px);
+}
+
+.demo.tile:hover {
+  width: 4vmin;
+  height: 4vmin;
+}
+
+.demo-tile-label {
+  position: absolute;
+  bottom: -15%;
+  pointer-events: none;
+  opacity: 0;
+  text-transform: uppercase;
+}
+
+.demo-tile-label, .demo-move-label::after {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.demo:hover .demo-tile-label {
+  opacity: 1;
+}
+
+.demo-buttons-container {
+  position: relative;
+  margin: 1rem 0 4rem 0;
+}
+
+.demo-move-label::after {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  content: "Hover any move to see what it does!";
+}
+
+#demo-attack-button {
+  animation: glint 5s infinite;
+  --border-color: #ebb6a9;
+  --bg-color: #f7ded8;
+}
+
+#demo-attack-button:hover ~ .demo-move-label::after {
+  content: "Attack will attempt to damage the other enemy.";
+}
+
+#demo-meditate-button {
+  animation: glint 5s infinite;
+  --border-color: #b0df90;
+  --bg-color: #dcf8cf;
+}
+
+#demo-meditate-button:hover ~ .demo-move-label::after {
+  content: "Meditate reduces incoming damage by 50% and provides a 25% damage boost next move.";
+}
+
+#demo-dodge-button {
+  animation: glint 5s infinite;
+  --border-color: #d9b9df;
+  --bg-color: #edd7f1;
+}
+
+#demo-dodge-button:hover ~ .demo-move-label::after {
+  content: "Dodge grants a chance to dodge all incoming damage.";
+}
+
+#demo-charge-button {
+  animation: glint 5s infinite;
+  --border-color: #dfd790;
+  --bg-color: #f8f5cf;
+}
+
+#demo-charge-button:hover ~ .demo-move-label::after {
+  content: "Charge increases your damage vulnerability by 45%, but provides a 150% damage boost to your next attack.";
 }

@@ -1,6 +1,6 @@
 export const type_ability_names = {
   "Blood": [
-    "Regenerating", "Warm-blooded", "Vampire", "Rage", 
+    "Regeneration", "Warm-blooded", "Vampire", "Rage", 
   ],
   "Pyromaniac": [
     "Flaming", "Heat Wave", "Arsonist",
@@ -42,7 +42,6 @@ export const neutral_ability_names = [
   "Swapper",
   "Vampire",
   "Rage",
-  "Momentum",
   "Wraith",
   "Sushi Chef",
   "Tank",
@@ -66,7 +65,7 @@ export const mutual_exclusions = [
   ["Leaping", "Acrobatic", "Flying", "Wraith"],
   ["Speedster", "Tank"],
 
-  ["Undying", "Regenerating", "Flying", "Turtle"],
+  ["Undying", "Regeneration", "Flying", "Turtle"],
   ["Flaming", "Heat Wave", "Aquatic", "Amphibious", "Octopus"],
   ["Psychic", "Esper", "Clairvoyant"],
   ["Defensive", "Aggresive", "Evasive"],
@@ -103,7 +102,7 @@ export const ability_descriptions = {
   "Amphibious"    : "Spirit can walk on water tiles and gets resistance & damage boost in water.", // IMPLEMENTED
   "Nuker"         : "Charge attacks do extra damage. Meditation damage resistance reduced.", // IMPLEMENTED
   "Defensive"     : "Spirit has an incoming damage reduction when defending in combat.", // IMPLEMENTED
-  "Regenerating"  : "Spirit passively regenerates health each turn and during battle.", // IMPLEMENTED
+  "Regeneration"  : "Spirit passively regenerates health each turn and during battle.", // IMPLEMENTED
   "Leaping"       : "Spirit can leap obstacle tiles as well as moving normally.", // IMPLEMENTED
   "Rampage"       : "Spirit gets a damage boost for every KO. Resets on death.", // IMPLEMENTED
   "Arctic"        : "Succesful attacks have a chance to freeze enemy spirits.",  // IMPLEMENTED
@@ -113,7 +112,6 @@ export const ability_descriptions = {
   "Plague"        : "During combat, enemy spirit takes damage each turn.", // IMPLEMENTED
   "Aggresive"     : "Spirit has a damage boost when attacking in combat.", // IMPLEMENTED
   "Sushi Chef"    : "Spirit does massive damage to marine type spirits.", // IMPLEMENTED
-  "Momentum"      : "Entering the battlefield does not consume a turn.", // IMPLEMENTED
   "Clairvoyant"   : "Using portal tiles does not consume a turn.", // IMPLEMENTED
   "Accuracy"      : "Enemy dodge chance reduced during combat.", // IMPLEMENTED
   "Martial Artist": "Successful dodges grant a damage boost.", // IMPLEMENTED

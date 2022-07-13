@@ -6,7 +6,7 @@ import { Server } from "socket.io";
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "https://stefantodoran.github.io/spirit-showdown"],
   },
 });
 
@@ -53,25 +53,15 @@ const tiles_boards = [
     ['wall','p1-spawn','none','none','none','none','none','none','p1-spawn','wall','wall','wall',],
   ],
   [
-    ['water','p2-spawn','none','none','none','none','none','none','none','none','p2-spawn','water',],
-    ['water','none','none','none','none','water','water','none','none','none','none','water',],
-    ['water','none','none','none','none','none','water','none','wall','wall','none','water',],
-    ['water','wall','none','wall','wall','none','none','none','portal','none','wall','water',],
-    ['water','wall','none','portal','none','none','none','wall','wall','none','wall','water',],
-    ['water','none','wall','wall','none','water','none','none','none','none','none','water',],
-    ['water','none','none','none','none','water','water','none','none','none','none','water',],
-    ['water','p1-spawn','none','none','none','none','none','none','none','none','p1-spawn','water',],
+    ['wall','wall','wall','none','none','none','none','none','none','wall','wall','wall',],
+    ['portal','none','none','none','none','wall','none','none','none','none','none','p1-spawn',],
+    ['wall','none','none','water','p2-spawn','wall','wall','portal','water','none','none','wall',],
+    ['wall','water','none','water','none','none','none','none','water','none','water','wall',],
+    ['wall','water','none','water','none','none','none','none','water','none','water','wall',],
+    ['wall','none','none','water','portal','wall','wall','p1-spawn','water','none','none','wall',],
+    ['p2-spawn','none','none','none','none','none','wall','none','none','none','none','portal',],
+    ['wall','wall','wall','none','none','none','none','none','none','wall','wall','wall',],
   ],
-  // [
-  //   ['wall','p2-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p2-spawn','wall',],
-  //   ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
-  //   ['wall','none','none','wall','none','wall','water','none','none','none','none','wall',],
-  //   ['portal','none','none','none','none','wall','water','none','none','wall','wall','wall',],
-  //   ['wall','wall','wall','none','none','water','wall','none','none','none','none','portal',],
-  //   ['wall','none','none','none','none','water','wall','none','wall','none','none','wall',],
-  //   ['wall','none','none','none','none','water','water','none','none','none','none','wall',],
-  //   ['wall','p1-spawn','wall','wall','wall','wall','wall','wall','wall','wall','p1-spawn','wall',],
-  // ],
 ];
 const spirits_board = [
   [null,null,null,null,null,null,null,null,null,null,null,null,],
@@ -150,6 +140,8 @@ function createGameObj(players) {
   // moves that successfully occur, rather than the entire board.
   const game = {
     turn: firstPlayer,
+    actions: [],
+
     tiles_board: fakeDeepCopy(tiles_boards[Math.floor(Math.random()*tiles_boards.length)]),
     spirits_board: fakeDeepCopy(spirits_board),
 
@@ -341,6 +333,14 @@ function getSpiritSpeed(spirit) {
   return 3;
 }
 
+// Returns the distance in tiles that a spirit can attack from.
+function getSpiritRange(spirit) {
+  if (spirit.abilities.includes("Octopus")) {
+    return 2;
+  }
+  return 1;
+}
+
 // Shorthand helper for calculating spirit health values, caps the 
 // provided value between 0 and spirit.HP, then rounds down to the nearest integer.
 function boundHealth(spirit, val) {
@@ -370,7 +370,7 @@ function pathHelper(game, pos, dest, abilities, depth, MAX_DEPTH) {
   }
 
   // If the spirit can leap other spirits, then we don't need to check tileEmpty.
-  const emptyCheck = abilities.includes("Acrobatic") ? true : tileEmpty(game, pos);
+  const emptyCheck = (abilities.includes("Acrobatic") || abilities.includes("Flying")) ? true : tileEmpty(game, pos);
   // If the spirit can leap obstacle tiles, then we don't need to check canWalkTile.
   const walkCheck = abilities.includes("Leaping") ? true : canWalkTile(game, pos, abilities);
   
@@ -487,6 +487,12 @@ function doSpiritMove(game, spirit, destination) {
       if (!tileEmpty(game, true_dest)) {
         return false;
       }
+
+      if (!spirit.abilities.includes("Clairvoyant")) {
+        spirit.acted = true;
+      }
+    } else {
+      spirit.acted = true;
     }
 
     if (type === 'water' && spirit.abilities.includes("Amphibious")) {
@@ -600,7 +606,7 @@ function calcModifiersHelper(spirit, enemy, curr_move, initiator) {
     direct -= spirit.HP * 0.1;
   }
 
-  if (spirit.abilities.includes("Regenerating")) {
+  if (spirit.abilities.includes("Regeneration")) {
     direct += spirit.HP * 0.025;
     // The heal value here is lower than the turn based heal since battles tend
     // to have several turns.
@@ -721,7 +727,7 @@ function handleHitEffects(spirit, enemy, enemy_hit) {
     }
 
     if (spirit.abilities.includes("Arctic")) {
-      if (Math.random() < 0.25) {
+      if (Math.random() < 0.25 && !enemy.abilities.includes("Warm-blooded")) {
         getEffect(enemy, "Frozen");
       }
     }
@@ -809,6 +815,10 @@ function boardUpdate(game, turn) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
       const spirit = game.spirits_board[y][x];
       if (spirit) {
+        if (turn) {
+          console.log("resetting acted flag");
+          spirit.acted = false;
+        }
 
         if (spirit.abilities.includes("Regeneration")) {
           if (spirit.current_hp < spirit.HP) {
@@ -906,7 +916,18 @@ function turnChange(game) {
   updateGraveyard(game);
   boardUpdate(game, true);
 
+  game.actions = [];
   game.turn = (game.turn === game.player_one) ? game.player_two : game.player_one;
+}
+
+function assertPlayerAction(game, action) {
+  game.actions.push(action);
+  if (game.actions.length >= 2) {
+    turnChange(game);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 
@@ -994,7 +1015,7 @@ io.on('connection', (socket) => {
 
     // Once we have both player's decks, we can reply with the initial game state.
     if (game.player_one_deck && game.player_two_deck) {
-      io.in(lobby_id).emit('init-game-state', game);
+      io.in(lobby_id).emit('state-update', game);
       /*DEBUG*/ console.log(game.player_one_hand);
       /*DEBUG*/ console.log(game.player_two_hand);
     }
@@ -1018,13 +1039,15 @@ io.on('connection', (socket) => {
     // First, we figure out if this is a spirit being deployed from the players hand, 
     // or simply moving on the board. Tiles in the players hand have a position of null.
 
-    if (spirit.position && !hasEffect(spirit, "Frozen")) {
+    console.log(spirit.acted);
+
+    if (spirit.position && !hasEffect(spirit, "Frozen") && !spirit.acted) {
       // This means the spirit is on the board. The next step is therefore
       // to check if the move is valid, e.g. within range & to a walkable tile.
 
       if (doSpiritMove(game, spirit, tile)) {
         if (!(tileType(game, tile) === 'portal' && spirit.abilities.includes("Clairvoyant"))) {
-          turnChange(game);
+          assertPlayerAction(game, "spirit-move");
         }
         
         if (checkWinConditions(game)) {
@@ -1058,9 +1081,7 @@ io.on('connection', (socket) => {
           game.spirits_board[pos[0]][pos[1]] = spirit;
           spirit.position = pos;
 
-          if (!spirit.abilities.includes("Momentum")) {
-            turnChange(game);
-          }
+          assertPlayerAction(game, "spirit-spawn");
 
           io.in(lobby_id).emit('state-update', game);
         }
@@ -1090,23 +1111,9 @@ io.on('connection', (socket) => {
     }
 
     if (!game.battle || game.battle.finished)  {
-      let update_type = 'state-update';
 
-      outerloop:
-      if (!tileWithinDistance(spirit.position, enemy.position, 1, true)) {
-        const max = getSpiritSpeed(spirit);
-        for (let x = -1; x <= 1; x++) {
-          for (let y = -1; y <= 1; y++) {
-            const tile_dest = `board-tile<${enemy.position[0] + x},${enemy.position[1] + y}>`;
-            if (doSpiritMove(game, spirit, tile_dest)) {
-              update_type = 'state-update:battle+move';
-              break outerloop;
-            }
-          }
-        }
-      }
-
-      if (tileWithinDistance(spirit.position, enemy.position, 1, true)) {
+      const range = getSpiritRange(spirit);
+      if (tileWithinDistance(spirit.position, enemy.position, range, true)) {
         const initiator = (game.player_one === socket.id) ? 'player_one' : 'player_two';
 
         game.battle = {
@@ -1120,8 +1127,10 @@ io.on('connection', (socket) => {
           player_two_prev: null,
         }
   
-        turnChange(game);
-        io.in(lobby_id).emit(update_type, game);
+        // Should beginning a battle cost an action?
+        // assertPlayerAction(game, "begin-battle");
+
+        io.in(lobby_id).emit('state-update', game);
       }
     }
   });

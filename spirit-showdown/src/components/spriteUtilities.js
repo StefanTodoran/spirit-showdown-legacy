@@ -1,3 +1,25 @@
+import { createRandomSpirit } from "../spiritGeneration";
+
+export function gameReadySpirit(seed, owner) {
+  const spirit = createRandomSpirit(seed);
+  return {
+    ...spirit,
+    owner: owner,
+    position: null, // null if in hand
+
+    turns_unmoved: 0,
+    cooldown: 0, // incremented if dead, revived when it hits 0 again
+
+    current_hp: spirit.HP,
+    hp_boost: 0, // this number is stacked on health
+    dmg_boost: 1, // this is a multiplier on damage
+  
+    effects: [],
+
+    acted: false, // true if this spirit has acted this turn
+  }
+}
+
 // Builds up a sprite from the array row by row using the provided tile
 // functions. The returned list will be ready to display.
 export function buildSprite(spirit, blankTile, fillTile) {

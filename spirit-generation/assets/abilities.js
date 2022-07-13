@@ -1,6 +1,6 @@
 export const type_ability_names = {
   "Blood": [
-    "Regenerating", "Warm-blooded", "Vampire", "Rage", 
+    "Regeneration", "Warm-blooded", "Vampire", "Rage", 
   ],
   "Pyromaniac": [
     "Flaming", "Heat Wave", "Arsonist",
@@ -42,7 +42,6 @@ export const neutral_ability_names = [
   "Swapper",
   "Vampire",
   "Rage",
-  "Momentum",
   "Wraith",
   "Sushi Chef",
   "Tank",
@@ -66,7 +65,7 @@ export const mutual_exclusions = [
   ["Leaping", "Acrobatic", "Flying", "Wraith"],
   ["Speedster", "Tank"],
 
-  ["Undying", "Regenerating", "Flying", "Turtle"],
+  ["Undying", "Regeneration", "Flying", "Turtle"],
   ["Flaming", "Heat Wave", "Aquatic", "Amphibious", "Octopus"],
   ["Psychic", "Esper", "Clairvoyant"],
   ["Defensive", "Aggresive", "Evasive"],
@@ -84,27 +83,26 @@ export const ability_descriptions = {
   "Farmer"        : "Nature type spirits within 2 tiles regenerate HP every turn and get a damage boost.",
   "Communist"     : "When combat is initiated, communist spirit's HP is set to be equal to enemy HP.",
   "Piggybacker"   : "Spirit can give up its movement phase to swap places with any allied spirit.",
-  "Leader"        : "Spirit gives resistanct & damage boost to allies within 1 tile of it.", 
+  "Leader"        : "Spirit gives resistance & damage boost to allies within 1 tile of it.", 
   "Venom"         : "After combat, enemy spirits take damage every turn until they move.",
   "Kamikaze"      : "Upon death, ALL directly adjacent spirits die instantly.",
   "Poisonous"     : "Each turn, enemy spirits within 2 tiles take damage.",
   "Warding"       : "Spirit is immune to curses.",
-  "Warm-blooded"  : "Immunity to freeze.",
   
   "Electric"      : "Spirit can walk on water tiles. Every turn, it and all other spirits in connected water tiles will take damage.", // PARTIAL IMPLEMENTATION
   "Esper"         : "Spirit can use portal tiles. Spirit can give up its movement phase to curse another spirit for 1 to 2 turns.", // PARTIAL IMPLEMENTATION
   "Arsonist"      : "Attacks can light enemies ablaze. Gains a damage boost for every succesfully burn.", // PARTIAL IMPLEMENTATION
   "Wraith"        : "Dodge chance is increased. Allied spirits can pass through this spirit.", // PARTIAL IMPLEMENTION
   "Octopus"       : "Spirit can walk on water tiles and has increased attack range.", // PARTIAL IMPLEMENTATION
-  "Flying"        : "Flying spirits can fly over other spirits and water tiles.", // PARTIAL IMPLEMENTATION
   
   "Heat Wave"     : "Spirit deals massive damage to burning spirits. Charge attacks set enemy spirits on fire.", // IMPLEMENTED
   "Wildcard"      : "During combat, spirit's random damage variation is increased (and skewed positive).", // IMPLEMENTED
   "Amphibious"    : "Spirit can walk on water tiles and gets resistance & damage boost in water.", // IMPLEMENTED
   "Nuker"         : "Charge attacks do extra damage. Meditation damage resistance reduced.", // IMPLEMENTED
   "Defensive"     : "Spirit has an incoming damage reduction when defending in combat.", // IMPLEMENTED
-  "Regenerating"  : "Spirit passively regenerates health each turn and during battle.", // IMPLEMENTED
+  "Regeneration"  : "Spirit passively regenerates health each turn and during battle.", // IMPLEMENTED
   "Leaping"       : "Spirit can leap obstacle tiles as well as moving normally.", // IMPLEMENTED
+  "Flying"        : "Flying spirits can fly over other spirits and water tiles.", // IMPLEMENTED
   "Rampage"       : "Spirit gets a damage boost for every KO. Resets on death.", // IMPLEMENTED
   "Arctic"        : "Succesful attacks have a chance to freeze enemy spirits.",  // IMPLEMENTED
   "Rage"          : "Spirit's damage increases as it gets closer to death.", // IMPLEMENTED
@@ -113,12 +111,6 @@ export const ability_descriptions = {
   "Plague"        : "During combat, enemy spirit takes damage each turn.", // IMPLEMENTED
   "Aggresive"     : "Spirit has a damage boost when attacking in combat.", // IMPLEMENTED
   "Sushi Chef"    : "Spirit does massive damage to marine type spirits.", // IMPLEMENTED
-  
-  // Consider changing what this does, and making all spirits not consume a turn
-  // by entering the battlefield. This would speed up the game. One option for this
-  // ability might be...
-  "Momentum"      : "Entering the battlefield does not consume a turn.", // IMPLEMENTED
-  
   "Clairvoyant"   : "Using portal tiles does not consume a turn.", // IMPLEMENTED
   "Accuracy"      : "Enemy dodge chance reduced during combat.", // IMPLEMENTED
   "Martial Artist": "Successful dodges grant a damage boost.", // IMPLEMENTED
@@ -131,4 +123,5 @@ export const ability_descriptions = {
   "Speedster"     : "Movement range is increased.", // IMPLEMENTED
   "Psychic"       : "Spirit can use portal tiles.", // IMPLEMENTED
   "Evasive"       : "Dodge chance is increased.", // IMPLEMENTED
+  "Warm-blooded"  : "Immunity to freeze.", // IMPLEMENTED
 }

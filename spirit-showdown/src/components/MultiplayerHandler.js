@@ -54,15 +54,15 @@ export default class MultiplayerHandler extends Component {
       }, 750); // otherwise it flashes too fast on good connections, looks wack
     });
 
+    // Here we define all socket events, which trigger
+    // when the server emits to the clients.
+
     socket.on('start-game', () => {
       socket.emit('provide-deck', this.props.deck, this.state.lobby_id);
       this.props.startedCallback(true); // informs parent to remove menu buttons
     });
 
-    socket.on('init-game-state', (game_state) => {
-      this.setState({ game_state: game_state });
-    });
-
+    // Usually occurs after a player has moved a spirit tile or initiated a battle.
     socket.on('state-update', (game_state) => {
       this.setState({ game_state: game_state });
 
@@ -71,20 +71,12 @@ export default class MultiplayerHandler extends Component {
       }
     });
 
+    // An event has taken place in the current battle. After some time, the battle events
+    // are cleared so that the animations might end.
     socket.on('battle-update', (game_state, battle_events) => {
       this.setState({ game_state: game_state, battle_events: battle_events, battle_move_queued: false });
       setTimeout(() => {
         this.setState({ battle_events: null });
-      }, 1500);
-    });
-
-    socket.on('state-update:battle+move', (game_state) => {
-      const battle = game_state.battle;
-      game_state.battle = null;
-      this.setState({ game_state: game_state });
-      setTimeout(() => {
-        game_state.battle = battle;
-        this.setState({ game_state: game_state });
       }, 1500);
     });
   }
@@ -100,19 +92,21 @@ export default class MultiplayerHandler extends Component {
   // that the player is in. The socket emitting to the server is handled
   // by the child components.
   setLobbyId(lobby_id) {
+    this.props.sound.play();
     this.setState({ lobby_id: lobby_id });
   }
 
   // Used by LobbyForm when it is unmounting to leave the lobby if the
   // player created one but did not follow through.
   leaveLobbyCreation() {
+    this.props.sound.play();
     if (!this.state.game_state && this.state.lobby_id !== null) {
       this.state.socket.emit('exit-lobby', this.state.lobby_id);
       this.setState({ lobby_id: null });
     }
   }
 
-  // Used by GameHandler to send a move to the server.
+  /* === GAME HANDLER CALLBACKS === */
   doMove(spirit, tile) {
     this.state.socket.emit('do-spirit-move', spirit, tile, this.state.lobby_id);
   }
@@ -125,17 +119,18 @@ export default class MultiplayerHandler extends Component {
   beginBattle(spirit, enemy) {
     this.state.socket.emit('begin-battle', spirit, enemy, this.state.lobby_id);
   }
+  /* === END GAME HANDLER CALLBACKS === */
 
   render() {
-    // Page is set by App, the parent component since the navbar is there.
+    // Page is set by App.js (parent component) since the navbar is there.
     const page = (this.props.page === 'create') 
       ? <LobbyForm socket={this.state.socket} setLobbyCallback={this.setLobbyId} leaveLobbyCallback={this.leaveLobbyCreation}/>
-      : <JoinForm socket={this.state.socket} setLobbyCallback={this.setLobbyId}/>;
+      : <JoinForm socket={this.state.socket} setLobbyCallback={this.setLobbyId} sound={this.props.sound}/>;
     
     return (
       <>
         {this.state.game_over && 
-        <button style={{marginBottom: "1rem"}} onClick={this.endGame}>Leave Game</button>}
+        <button style={{marginBottom: "1rem"}} onClick={ () => { this.endGame(); this.props.sound.play(); } }>Leave Game</button>}
         {!this.state.connected && <Loader text={'Connecting to server'}/>}
         {!this.state.game_state && this.state.connected && <>{page}</>}
         {this.state.game_state && 

@@ -1,7 +1,7 @@
 import {Component} from 'react';
 import { buildSprite, createFire, hasEffect } from './spriteUtilities.js';
-import './Components.css';
 import StatsCard from './StatsCard.js';
+import './Components.css';
 
 export default class Spirit extends Component {
   render() {
@@ -33,12 +33,15 @@ export default class Spirit extends Component {
 
     const sprite = (this.props.spirit) ? buildSprite(this.props.spirit, blankTile, fillTile) : [];
     const fire = createFire(this.props.spirit, 15, 100);
+    
+    const dodge_messages = ["MISS", "DODGED", "EVADED", "WHIFF"];
+    const dodge_text = dodge_messages[Math.floor(Math.random() * dodge_messages.length)];
 
     return (
       <div className={(this.props.flashing > 0) ? 'deck flashing-sprite' : 'deck'} style={{overflow: 'hidden'}}>
         {sprite}{fire}
         <StatsCard spirit={this.props.spirit} styleClass={'card cover-card'}/>
-        {this.props.dodged && <p className='dodge-text'>MISS</p>}
+        {this.props.dodged && <p className='dodge-text'>{dodge_text}</p>}
       </div>
     );
   }

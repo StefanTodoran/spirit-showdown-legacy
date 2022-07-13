@@ -1,28 +1,9 @@
 import { Component } from 'react';
 import Spirit from './Spirit';
 import SpiritTile from './SpiritTile';
-import { createRandomSpirit } from '../spiritGeneration';
+import { gameReadySpirit } from './spriteUtilities';
 
 export default class Deck extends Component {
-  gameReadySpirit(seed) {
-    const spirit = createRandomSpirit(seed);
-    return {
-      ...spirit,
-      owner: this.props.player,
-      position: null, // null if in hand
-      seed: seed,
-
-      turns_unmoved: 0,
-      cooldown: 0, // incremented if dead, revived when it hits 0 again
-
-      current_hp: spirit.HP,
-      hp_boost: 0, // this number is stacked on health
-      dmg_boost: 1, // this is a multiplier on damage
-    
-      effects: [],
-    }
-  }
-
   sameSpirit(a, b) {
     return a.seed === b.seed && a.owner === b.owner;
   }
@@ -31,7 +12,7 @@ export default class Deck extends Component {
     const deck = [];
     for (let i = 0; i < this.props.deck.length; i++) {
       const seed = this.props.deck[i];
-      const spirit = this.gameReadySpirit(seed);
+      const spirit = gameReadySpirit(seed, this.props.player);
       const id = `spirit(${this.props.player})[${seed}]`;
       
       if (this.props.display) {

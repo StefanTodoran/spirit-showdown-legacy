@@ -88,7 +88,7 @@ export default class LobbyForm extends Component {
           }}>
           {lobbies.length === 0 && <p>No lobbies found</p>}
           {lobbies.length > 0 && <p>{lobbies}</p>}
-          <button onClick={this.refreshLobbies}>Refresh</button>
+          <button onClick={ () => { this.refreshLobbies(); this.props.sound.play(); } }>Refresh</button>
           <br/>
         </section>
       </>
