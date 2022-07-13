@@ -113,7 +113,12 @@ export const ability_descriptions = {
   "Plague"        : "During combat, enemy spirit takes damage each turn.", // IMPLEMENTED
   "Aggresive"     : "Spirit has a damage boost when attacking in combat.", // IMPLEMENTED
   "Sushi Chef"    : "Spirit does massive damage to marine type spirits.", // IMPLEMENTED
+  
+  // Consider changing what this does, and making all spirits not consume a turn
+  // by entering the battlefield. This would speed up the game. One option for this
+  // ability might be...
   "Momentum"      : "Entering the battlefield does not consume a turn.", // IMPLEMENTED
+  
   "Clairvoyant"   : "Using portal tiles does not consume a turn.", // IMPLEMENTED
   "Accuracy"      : "Enemy dodge chance reduced during combat.", // IMPLEMENTED
   "Martial Artist": "Successful dodges grant a damage boost.", // IMPLEMENTED
