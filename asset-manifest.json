@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/spirit-showdown/static/css/main.1a43f067.css",
+    "main.js": "/spirit-showdown/static/js/main.44a5d27a.js",
+    "static/js/787.6a3a5f8b.chunk.js": "/spirit-showdown/static/js/787.6a3a5f8b.chunk.js",
+    "index.html": "/spirit-showdown/index.html",
+    "main.1a43f067.css.map": "/spirit-showdown/static/css/main.1a43f067.css.map",
+    "main.44a5d27a.js.map": "/spirit-showdown/static/js/main.44a5d27a.js.map",
+    "787.6a3a5f8b.chunk.js.map": "/spirit-showdown/static/js/787.6a3a5f8b.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1a43f067.css",
+    "static/js/main.44a5d27a.js"
+  ]
+}
