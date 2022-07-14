@@ -34,6 +34,7 @@ export default class MultiplayerHandler extends Component {
     this.doMove = this.doMove.bind(this);
     this.doBattleMove = this.doBattleMove.bind(this);
     this.beginBattle = this.beginBattle.bind(this);
+    this.endTurn = this.endTurn.bind(this);
   }
 
   componentDidMount() {
@@ -119,6 +120,11 @@ export default class MultiplayerHandler extends Component {
   beginBattle(spirit, enemy) {
     this.state.socket.emit('begin-battle', spirit, enemy, this.state.lobby_id);
   }
+
+  endTurn() {
+    this.props.sound.play();
+    this.state.socket.emit('end-turn', this.state.lobby_id);
+  }
   /* === END GAME HANDLER CALLBACKS === */
 
   render() {
@@ -137,8 +143,10 @@ export default class MultiplayerHandler extends Component {
           <>
             <GameHandler 
               deck={this.props.deck} player_id={this.state.player_id}
+
               doMoveCallback={this.doMove} doBattleMoveCallback={this.doBattleMove}
-              beginBattleCallback={this.beginBattle}
+              beginBattleCallback={this.beginBattle} endTurnCallback={this.endTurn}
+              
               battleMoveQueued={this.state.battle_move_queued}
               gameState={this.state.game_state} battleEvents={this.state.battle_events}
             />

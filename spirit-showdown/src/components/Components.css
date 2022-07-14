@@ -6,6 +6,9 @@
   font-weight: bold;
 }
 
+#end-turn-button {
+  margin-top: 10px;
+}
 
 
 /* Spirit styles */
@@ -38,13 +41,13 @@
 }
 
 .selected {
-  border: 2px solid black;
+  border: 2px solid rgb(88, 88, 88);
   margin: 9px 10px;
   transform: translateY(-5px);
 }
 
 .selected:hover {
-  border: 3px solid black;
+  border: 3px solid rgb(88, 88, 88);
   margin: 8px 10px;
   transform: translateY(-5px);
 }
@@ -178,10 +181,8 @@ always have to do something differently... */
   scrollbar-width: thin;
   scrollbar-color: #cccccc77 #00000000;
 }
+
 /* =========================== */
-
-
-
 /* GameBoard and BoardTile styles */
 
 .tile {
@@ -274,9 +275,8 @@ always have to do something differently... */
 }
 
 /* ============================== */
-
-
 /* SpiritBattle styles */
+
 .health-bar {
   background-color: #0b1d0d;
   position: relative;
@@ -348,7 +348,7 @@ always have to do something differently... */
   --bg-color: #edd7f1;
 }
 
-#charge-button:hover {
+#charge-button:hover, #end-turn-button.active {
   animation: glint 2s infinite;
   --border-color: #dfd790;
   --bg-color: #f8f5cf;
@@ -508,10 +508,8 @@ always have to do something differently... */
 }
 
 /* =================== */
-
-
-
 /* Demo Styles */
+
 .demo.tile {
   width: calc(4vmin + 2px);
   height: calc(4vmin + 2px);
@@ -571,7 +569,7 @@ always have to do something differently... */
 }
 
 #demo-meditate-button:hover ~ .demo-move-label::after {
-  content: "Meditate reduces incoming damage by 50% and provides a 25% damage boost next move.";
+  content: "Meditate reduces incoming damage by 50% and provides a 25% damage boost to your next attack.";
 }
 
 #demo-dodge-button {

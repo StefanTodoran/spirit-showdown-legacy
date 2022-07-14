@@ -341,6 +341,19 @@ function getSpiritRange(spirit) {
   return 1;
 }
 
+// Helper shorthand that determines whether a spirit can act based on whether
+// it already has or has any effects that would prevent it from doing so.
+// The `action` parameter signifies whether the spirit needs to not have acted.
+function spiritCanAct(spirit, action) {
+  if (hasEffect(spirit, "Frozen") || hasEffect(spirit, "Undying")) {
+    return false;
+  }
+  if (action && spirit.acted) {
+    return false;
+  }
+  return true;
+}
+
 // Shorthand helper for calculating spirit health values, caps the 
 // provided value between 0 and spirit.HP, then rounds down to the nearest integer.
 function boundHealth(spirit, val) {
@@ -353,26 +366,33 @@ function boundHealth(spirit, val) {
 /* = MISCELLANEOUS HELPERS = */
 // Recursive function that checks whether there is a valid path from the start tile to the end tile.
 // Takes into account the type of tiles the specific spirit can walk on, and the maximum distance.
-function hasValidPath(game, spirit_tile, destination, abilities, distance) {
-  const pos = tilePosition(spirit_tile);
+function hasValidPath(game, spirit, destination, distance) {
   const dest_pos = tilePosition(destination);
 
-  return pathHelper(game, [pos[0] + 1, pos[1]], dest_pos, abilities, 0, distance) ||
-    pathHelper(game, [pos[0] - 1, pos[1]], dest_pos, abilities, 0, distance) ||
-    pathHelper(game, [pos[0], pos[1] + 1], dest_pos, abilities, 0, distance) ||
-    pathHelper(game, [pos[0], pos[1] - 1], dest_pos, abilities, 0, distance);
+  return pathHelper(game, [spirit.position[0] + 1, spirit.position[1]], dest_pos, spirit.abilities, spirit.owner, 0, distance) ||
+         pathHelper(game, [spirit.position[0] - 1, spirit.position[1]], dest_pos, spirit.abilities, spirit.owner, 0, distance) ||
+         pathHelper(game, [spirit.position[0], spirit.position[1] + 1], dest_pos, spirit.abilities, spirit.owner, 0, distance) ||
+         pathHelper(game, [spirit.position[0], spirit.position[1] - 1], dest_pos, spirit.abilities, spirit.owner, 0, distance);
 }
 
 // Helper for recursive function hasValidPath. Do not call directly.
-function pathHelper(game, pos, dest, abilities, depth, MAX_DEPTH) {
+function pathHelper(game, pos, dest, abilities, owner, depth, MAX_DEPTH) {
   if (!validPosition(pos[0], pos[1]) || depth === MAX_DEPTH) {
     return false;
   }
 
-  // If the spirit can leap other spirits, then we don't need to check tileEmpty.
-  const emptyCheck = (abilities.includes("Acrobatic") || abilities.includes("Flying")) ? true : tileEmpty(game, pos);
   // If the spirit can leap obstacle tiles, then we don't need to check canWalkTile.
   const walkCheck = abilities.includes("Leaping") ? true : canWalkTile(game, pos, abilities);
+  // If the spirit can leap or fly over other spirits, then we don't need to check tileEmpty.
+  let emptyCheck = (abilities.includes("Acrobatic") || abilities.includes("Flying")) ? true : tileEmpty(game, pos);
+  if (!emptyCheck) {
+    // This means that there is a spirit in the way. If that spirit is Undying and KOed, then other spirits
+    // can move past them. If that spirit is an allied Wraith, we can pass through them.
+    const occupant = game.spirits_board[pos[0]][pos[1]];
+    if (hasEffect(occupant, "Undying") || (occupant.abilities.includes("Wraith") && occupant.owner === owner)) {
+      emptyCheck = true;
+    }
+  }
   
   if (!walkCheck || !emptyCheck) {
     return false;
@@ -381,10 +401,10 @@ function pathHelper(game, pos, dest, abilities, depth, MAX_DEPTH) {
     // spirits can't end up on a tile that is occupied or they can't walk on.
     return tileEmpty(game, pos) && canWalkTile(game, pos, abilities);
   } else {
-    return pathHelper(game, [pos[0] + 1, pos[1]], dest, abilities, depth + 1, MAX_DEPTH) ||
-      pathHelper(game, [pos[0] - 1, pos[1]], dest, abilities, depth + 1, MAX_DEPTH) ||
-      pathHelper(game, [pos[0], pos[1] + 1], dest, abilities, depth + 1, MAX_DEPTH) ||
-      pathHelper(game, [pos[0], pos[1] - 1], dest, abilities, depth + 1, MAX_DEPTH);
+    return pathHelper(game, [pos[0] + 1, pos[1]], dest, abilities, owner, depth + 1, MAX_DEPTH) ||
+           pathHelper(game, [pos[0] - 1, pos[1]], dest, abilities, owner, depth + 1, MAX_DEPTH) ||
+           pathHelper(game, [pos[0], pos[1] + 1], dest, abilities, owner, depth + 1, MAX_DEPTH) ||
+           pathHelper(game, [pos[0], pos[1] - 1], dest, abilities, owner, depth + 1, MAX_DEPTH);
   }
 }
 
@@ -408,9 +428,10 @@ function getEffect(spirit, effect) {
       duration: 1,
       display: true, // indicates to client whether to display or not
     },
-    "Hydrated": {
-      effect: "Hydrated",
+    "Amphibious": {
+      effect: "Amphibious",
       dmg_boost: .5,
+      display: true,
     },
     "Meditated": {
       effect: "Meditated",
@@ -442,6 +463,12 @@ function getEffect(spirit, effect) {
       kills: 0,
       dmg_boost: 0,
     },
+    "Undying": {
+      effect: "Undying",
+      cooldown: 0,
+      duration: 0,
+      display: true,
+    }
     // "Cursed": {
     //   effect: "Cursed",
     //   duration: 0,
@@ -476,7 +503,7 @@ function deleteEffect(spirit, effect) {
 // Returns true or false representing the success of the operation.
 function doSpiritMove(game, spirit, destination) {
   const max = getSpiritSpeed(spirit);
-  if (tileWithinDistance(spirit.position, destination, max) && hasValidPath(game, spirit.position, destination, spirit.abilities, max)) {
+  if (tileWithinDistance(spirit.position, destination, max) && hasValidPath(game, spirit, destination, max)) {
     // We check distance even though hasValidPath will not exceed the distance since tileWithinDistance is
     // a cheaper check and if it returns false we don't need to bother with hasValidPath.
     const type = tileType(game, destination);
@@ -496,10 +523,10 @@ function doSpiritMove(game, spirit, destination) {
     }
 
     if (type === 'water' && spirit.abilities.includes("Amphibious")) {
-      getEffect(spirit, "Hydrated");
+      getEffect(spirit, "Amphibious");
     }
-    if (type !== 'water' && hasEffect(spirit, "Hydrated")) {
-      deleteEffect(spirit, "Hydrated");
+    if (type !== 'water' && hasEffect(spirit, "Amphibious")) {
+      deleteEffect(spirit, "Amphibious");
     }
     if (spirit.abilities.includes("Turtle")) {
       const effect = getEffect(spirit, "Turtle")
@@ -612,7 +639,7 @@ function calcModifiersHelper(spirit, enemy, curr_move, initiator) {
     // to have several turns.
   }
 
-  if (hasEffect(spirit, "Hydrated")) {
+  if (hasEffect(spirit, "Amphibious")) {
     incoming *= 0.75;
   }
 
@@ -771,16 +798,27 @@ function handleKillEffects(game, spirit) {
   refreshReference(game, spirit);
 }
 
-// Helper function for addToGraveyard. Do not call directly.
+// Helper function for addToGraveyard.
 // Returns true on spirit death and false otherwise.
 function addToGraveyardHelper(game, spirit) {
   if (spirit.current_hp === 0) {
-    game.graveyard.push(spirit);
-    spirit.cooldown = 25 - spirit.SPD;
     spirit.effects = [];
-    
-    updateSpiritPosition(game, spirit, null);
-    return true;
+
+    if (spirit.abilities.includes("Undying") && (tileType(game, spirit.pos) !== "p1-spawn" || tileType(game, spirit.pos) !== "p2-spawn")) {
+      // Undying spirits remain on the board (but still have a cooldown)
+      const effect = getEffect(spirit, "Undying");
+      effect.cooldown = 25 - spirit.SPD;
+      effect.duration = effect.cooldown;
+
+      refreshReference(game, spirit);
+    } else {
+      // Normal spirit death, with removal from board
+      game.graveyard.push(spirit);
+      spirit.cooldown = 25 - spirit.SPD;
+      
+      updateSpiritPosition(game, spirit, null);
+    }
+    return true; // death occurred
   } else {
     refreshReference(game, spirit);
     return false;
@@ -816,10 +854,11 @@ function boardUpdate(game, turn) {
       const spirit = game.spirits_board[y][x];
       if (spirit) {
         if (turn) {
-          console.log("resetting acted flag");
           spirit.acted = false;
         }
 
+        // We regenerate regardless of the `turn` flag since we want
+        // to regenerate for boardUpdates that occur during each battle round too.
         if (spirit.abilities.includes("Regeneration")) {
           if (spirit.current_hp < spirit.HP) {
             spirit.current_hp = boundHealth(spirit, spirit.current_hp + (spirit.HP * 0.1));
@@ -838,6 +877,14 @@ function boardUpdate(game, turn) {
         if (spirit.abilities.includes("Rage")) {
           const multiplier = (spirit.HP / spirit.current_hp) - 1;
           getEffect(spirit, "Rage").dmg_boost = Math.min(multiplier, 8);
+        }
+
+        if (hasEffect(spirit, "Undying")) {
+          const effect = getEffect(spirit, "Undying");
+          const progress = 1 - (effect.duration / effect.cooldown);
+          // we don't bother with bound health because we know it will be
+          // between 0% and 100% of its max health by the nature of the calculation.
+          spirit.current_hp = Math.floor(spirit.HP * progress);
         }
         
         spirit.dmg_boost = 1; 
@@ -868,7 +915,14 @@ function boardUpdate(game, turn) {
           deleteEffect(spirit, to_delete[i]);
         }
 
-        refreshReference(game, spirit);
+        if (turn) {
+          // This way, if a spirit dies outside of battle (such as from burning) it
+          // will be placed in the graveyard. We don't want to do this in the battle
+          // since we have to handle kill effects differently there.
+          addToGraveyardHelper(game, spirit);
+        } else {
+          refreshReference(game, spirit);
+        }
       }
     }
   }
@@ -910,7 +964,7 @@ function checkWinConditions(game) {
   return false;
 }
 
-// Changes the turn of the game to the player whose turn it is currently not.
+// Changes the turn of the game to the other player. Resets the actions counter.
 // Calls the board update handler to do turn based updates on values and effects.
 function turnChange(game) {
   updateGraveyard(game);
@@ -923,11 +977,14 @@ function turnChange(game) {
 function assertPlayerAction(game, action) {
   game.actions.push(action);
   if (game.actions.length >= 2) {
-    turnChange(game);
     return true;
   } else {
     return false;
   }
+}
+
+function hasActionsLeft(game) {
+  return game.actions.length < 2;
 }
 
 
@@ -1035,13 +1092,18 @@ io.on('connection', (socket) => {
     if (!(game.turn === socket.id)) {
       return;
     }
+
+    if (!hasActionsLeft(game)) {
+      return;
+    }
     
     // First, we figure out if this is a spirit being deployed from the players hand, 
     // or simply moving on the board. Tiles in the players hand have a position of null.
 
-    console.log(spirit.acted);
+    // We also need to make sure that the spirit has not acted already and that it has no
+    // effects that would prevent it from moving.
 
-    if (spirit.position && !hasEffect(spirit, "Frozen") && !spirit.acted) {
+    if (spirit.position && spiritCanAct(spirit, true)) {
       // This means the spirit is on the board. The next step is therefore
       // to check if the move is valid, e.g. within range & to a walkable tile.
 
@@ -1105,8 +1167,11 @@ io.on('connection', (socket) => {
     // First, we figure out if either spirit is not on the board, in which case
     // this would be an invalid battle. Secondly we need to ensure the player 
     // isn't trying to battle their own spirit on accident.
-
     if (spirit.position === null || enemy.position === null || enemy.owner === socket.id) {
+      return;
+    }
+
+    if (!spiritCanAct(spirit, false) || hasEffect(enemy, "Undying")) {
       return;
     }
 
@@ -1168,6 +1233,22 @@ io.on('connection', (socket) => {
         const events = doBattleTurn(game, game.battle);
         io.in(lobby_id).emit('battle-update', game, events);
       }
+    }
+  });
+
+  socket.on('end-turn', (lobby_id) => {
+    /*DEBUG*/ console.log(socket.id + " > Requesting turn end");
+
+    const lobby = lobbies[lobby_id];
+    if (!validLobby(lobby)) {
+      return;
+    }
+    const game = lobby.game;
+
+    if (game.turn === socket.id) {
+      turnChange(game);
+      io.in(lobby_id).emit('state-update', game);
+      /*DEBUG*/ console.log(socket.id + " > Turn successfully ended\n");
     }
   });
 });

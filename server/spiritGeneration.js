@@ -1,5 +1,5 @@
 import { GetColorName } from 'hex-color-to-color-name';
-import { type_ability_names, neutral_ability_names } from './assets/abilities.js';
+import { type_ability_names, neutral_ability_names, mutual_exclusions } from './assets/abilities.js';
 import { healthWords, attackWords, lowTierWords, highTierWords } from './assets/words.js';
 
 function sfc32(a, b, c, d) {
@@ -106,22 +106,42 @@ function getHueType(hue, sat, li) {
     {low: 345, high: 360, value: "Blood"},
   ];
   
+  console.log("Hue: " + hue + ", Sat: " + sat + ", Li: " + li);
+  console.log(sat + li, sat + li < 50);
+  if (li < 10 || (sat + li < 50)) {
+    return "Dark";
+  }
   for (let i = 0; i < HUES_TABLE.length; i++) {
     const range = HUES_TABLE[i];
     if (hue >= range.low && hue <= range.high) {
       // This means it is in the proper hue range, but
       // we also need to check that the saturation or
       // lightness aren't too low.
-      if (sat + li > 40) {
+      if (sat + li > 80) {
         return range.value;
       }
     }
   }
-  
-  if (li < 40) {
-    return "Dark";
-  }
   return null;
+}
+
+function validAbility(abilities, new_ability) {
+  if (abilities.includes(new_ability)) {
+    return false;
+  }
+
+  for (let i = 0; i < mutual_exclusions.length; i++) {
+    const exclusion_set = mutual_exclusions[i];
+    if (exclusion_set.includes(new_ability)) {
+      for (let j = 0; j < exclusion_set.length; j++) {
+        if (abilities.includes(exclusion_set[j])) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 export function createRandomSpirit(seed) {
@@ -159,7 +179,8 @@ export function createRandomSpirit(seed) {
 
   // Correction for spirits that are too bright:
   while (lightness + saturation > 120) {
-    lightness *= 0.9;
+    lightness *= 0.95;
+    saturation *= 0.95;
   }
 
   // Add in a chance of dark spirits:
@@ -188,7 +209,7 @@ export function createRandomSpirit(seed) {
   /* Spirit stats generation */
 
   // Multiply by random(x, y) for some variance in points, the numbers are arbitrary.
-  let points = random(80, 120) * ((level + MAX_LEVEL) / 2);
+  let points = random(80, 120) * (level + (1.5 * MAX_LEVEL)) / 2;
   let HP = 0; let ATK = 0;
   while (points > 0) {
     const amount = random(1, Math.max(5, Math.floor(points / 9))); // Seems to increase randomness of stat spread...
@@ -220,7 +241,7 @@ export function createRandomSpirit(seed) {
   for (let i = 0; i < level; i++) {
     if (abilities.length < MAX_ABILITIES[level - 1] && rand() < chance) {
       const new_ability = pool[random(0, pool.length)];
-      if (!abilities.includes(new_ability)) {
+      if (validAbility(abilities, new_ability)) {
         abilities.push(new_ability);
         chance *= 0.6;
       } else {
@@ -328,6 +349,7 @@ export function createRandomSpirit(seed) {
 
   /* [===== =================== =====] */
 
+  console.log(name_);
   const spirit = {
     name: name_,
     level: level,

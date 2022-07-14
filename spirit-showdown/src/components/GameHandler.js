@@ -17,6 +17,7 @@ export default class GameHandler extends Component {
 
     this.selectSpirit = this.selectSpirit.bind(this);
     this.selectTile = this.selectTile.bind(this);
+    this.moveSpiritToTile = this.moveSpiritToTile.bind(this);
   }
 
   componentDidMount() {
@@ -114,9 +115,11 @@ export default class GameHandler extends Component {
     const actions = () => {
       if (this.props.gameState.actions.length === 0) {
         return "Two actions remaining";
-      } else {
+      }
+      if (this.props.gameState.actions.length === 1) {
         return "One action remaining";
       }
+      return "Zero actions remaining";
     }
     
     return (
@@ -143,7 +146,12 @@ export default class GameHandler extends Component {
           <>
             <p style={{textAlign: "center"}}>
               Your turn to play<br/>
-              {actions()}
+              {actions()}<br/>
+              <button 
+                id="end-turn-button" className={this.props.gameState.actions.length === 2 ? "active" : ""} 
+                onClick={this.props.endTurnCallback}>
+                  End Turn
+              </button>
             </p>
           </>
           }

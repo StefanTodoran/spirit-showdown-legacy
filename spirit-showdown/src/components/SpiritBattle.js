@@ -2,19 +2,13 @@ import { Component } from "react";
 import Spirit from "./Spirit";
 import Loader from "./Loader";
 
-export default class SpiritBattle extends Component {
-  constructor(props) {
-    super(props);
-  
-    this.state = {
-      buttonSound: new Audio(require('../assets/click.wav')),
-      // healSound: new Audio(require('../assets/heal.wav')),
-      // hitSounds: [new Audio(require('../assets/hit_1.wav')), new Audio(require('../assets/hit_2.wav')), new Audio(require('../assets/hit_3.wav'))],
-    }
-  }
+const buttonSound = new Audio(require('../assets/click.wav'));
+const healSound = new Audio(require('../assets/heal.wav'));
+const hitSounds = [new Audio(require('../assets/hit_1.wav')), new Audio(require('../assets/hit_2.wav')), new Audio(require('../assets/hit_3.wav'))];
 
+export default class SpiritBattle extends Component {
   selectMove(move) {
-    this.state.buttonSound.play();
+    buttonSound.play();
     this.props.battleMoveCallback(move);
     this.setState({
       selected: move,
@@ -29,11 +23,14 @@ export default class SpiritBattle extends Component {
   }
 
   handleSounds(change) {
+    if (!this.props.player_one) {
+      return; // DEBUG ONLY
+    }
     if (change > 0) { // damage
-      this.state.hitSounds[Math.floor(Math.random() * this.state.hitSounds.length)].play();
+      hitSounds[Math.floor(Math.random() * hitSounds.length)].play();
     }
     if (change < 0) { // heal
-      this.state.healSound.play();  
+      healSound.play();
     }
   }
 
@@ -51,7 +48,7 @@ export default class SpiritBattle extends Component {
       dodges.reverse();
     }
 
-    // this.handleSounds(flashing[1]);
+    this.handleSounds(flashing[1]);
 
     let canFlee = false;
     if (this.props.player_one && this.props.battle.initiator === "player_one" || 
