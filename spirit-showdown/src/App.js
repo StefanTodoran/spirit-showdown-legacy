@@ -4,8 +4,6 @@ import MultiplayerHandler from './components/MultiplayerHandler';
 
 import './App.css';
 import DemoBoard from './demo/DemoBoard';
-import Spirit from './components/Spirit';
-import { gameReadySpirit } from './components/spriteUtilities';
 
 export class App extends Component {
   state = {
@@ -149,7 +147,7 @@ export class App extends Component {
                 points of damage a spirit deals per attack, and <strong>SPD</strong>, or the amount of turns 
                 a spirit is KOed for before can be played again.
               </p>
-              <Deck deck={[1364725245346.997,551987091939.64,1067619017579.7823]} display={true}/>
+              <Deck deck={[1364725245346.997,551987091939.64,922417620487.1722]} display={true}/>
               <p style={{maxWidth: "min(80vw, 400px)", paddingBottom: 80}}>
                 That's all you need to get started. Get out there and have some fun!
               </p>

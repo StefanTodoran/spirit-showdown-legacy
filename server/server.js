@@ -677,7 +677,7 @@ function calcModifiersHelper(spirit, enemy, curr_move, initiator) {
 
   } else if (curr_move === 'meditate') { /* -=====- MEDITATE -=====- */
     // If a spirit meditates, all incoming damage is reduced...
-    incoming *= spirit.abilities.includes("Nuker") ? 0.25 : 0.5;
+    incoming *= spirit.abilities.includes("Nuker") ? 0.75 : 0.5;
     // ...and the next attack will do increased damage.
 
     const effect = getEffect(spirit, "Meditated");

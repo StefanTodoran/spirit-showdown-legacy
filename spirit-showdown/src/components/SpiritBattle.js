@@ -23,9 +23,6 @@ export default class SpiritBattle extends Component {
   }
 
   handleSounds(change) {
-    if (!this.props.player_one) {
-      return; // DEBUG ONLY
-    }
     if (change > 0) { // damage
       hitSounds[Math.floor(Math.random() * hitSounds.length)].play();
     }
@@ -51,8 +48,8 @@ export default class SpiritBattle extends Component {
     this.handleSounds(flashing[1]);
 
     let canFlee = false;
-    if (this.props.player_one && this.props.battle.initiator === "player_one" || 
-      !this.props.player_one && this.props.battle.initiator === "player_two") {
+    if ((this.props.player_one && this.props.battle.initiator === "player_one") || 
+      (!this.props.player_one && this.props.battle.initiator === "player_two")) {
         canFlee = !enemy.abilities.includes("Demonic");
     }
 

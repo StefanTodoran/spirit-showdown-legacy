@@ -48,12 +48,12 @@ function validQuery(x, y, arr) {
 function isOutline(x, y, arr) {
   if (arr[x][y] !== 0) { return false; }
   for (let dx = -1; dx <= 1; dx++) {
-    if (validQuery(x + dx, y, arr) && arr[x + dx][y] == 1) {
+    if (validQuery(x + dx, y, arr) && arr[x + dx][y] === 1) {
       return true;
     }
   }
   for (let dy = -1; dy <= 1; dy++) {
-    if (validQuery(x, y + dy, arr) && arr[x][y + dy] == 1) {
+    if (validQuery(x, y + dy, arr) && arr[x][y + dy] === 1) {
       return true;
     }
   }
@@ -70,7 +70,7 @@ function hslToRgb(hue, sat, li) {
   let h = hue / 360; let s = sat / 100; let l = li / 100;
   let r, g, b;
 
-  if (s == 0) {
+  if (s === 0) {
     r = g = b = l; // achromatic
   } else {
     function hue2rgb(p, q, t) {
@@ -179,8 +179,11 @@ export function createRandomSpirit(seed) {
 
   // Correction for spirits that are too bright:
   while (lightness + saturation > 120) {
-    lightness *= 0.95;
-    saturation *= 0.95;
+    if (rand() < 0.5) {
+      lightness *= 0.95;
+    } else {
+      saturation *= 0.95;
+    }
   }
 
   // Add in a chance of dark spirits:
