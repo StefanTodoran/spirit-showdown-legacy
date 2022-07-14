@@ -1,16 +1,20 @@
 {
   "files": {
-    "main.css": "/spirit-showdown/static/css/main.0383f0dd.css",
-    "main.js": "/spirit-showdown/static/js/main.f95ce37d.js",
+    "main.css": "/spirit-showdown/static/css/main.6f865c20.css",
+    "main.js": "/spirit-showdown/static/js/main.81b61606.js",
     "static/js/787.6a3a5f8b.chunk.js": "/spirit-showdown/static/js/787.6a3a5f8b.chunk.js",
+    "static/media/hit_2.wav": "/spirit-showdown/static/media/hit_2.98d8632644af814b9deb.wav",
+    "static/media/hit_3.wav": "/spirit-showdown/static/media/hit_3.4e321aea89986b48250e.wav",
+    "static/media/heal.wav": "/spirit-showdown/static/media/heal.a4a0a7fd74bd52f61773.wav",
+    "static/media/hit_1.wav": "/spirit-showdown/static/media/hit_1.9b95becb09314511b6b2.wav",
     "static/media/click.wav": "/spirit-showdown/static/media/click.c26a9c6bc972f5f4f418.wav",
     "index.html": "/spirit-showdown/index.html",
-    "main.0383f0dd.css.map": "/spirit-showdown/static/css/main.0383f0dd.css.map",
-    "main.f95ce37d.js.map": "/spirit-showdown/static/js/main.f95ce37d.js.map",
+    "main.6f865c20.css.map": "/spirit-showdown/static/css/main.6f865c20.css.map",
+    "main.81b61606.js.map": "/spirit-showdown/static/js/main.81b61606.js.map",
     "787.6a3a5f8b.chunk.js.map": "/spirit-showdown/static/js/787.6a3a5f8b.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.0383f0dd.css",
-    "static/js/main.f95ce37d.js"
+    "static/css/main.6f865c20.css",
+    "static/js/main.81b61606.js"
   ]
 }
