@@ -42,8 +42,8 @@ export default class MultiplayerHandler extends Component {
       this.setState({ player_id: player_id });
     };
 
-    const socket = io.connect('http://localhost:8080');
-    // const socket = io.connect('192.168.0.174:8080');
+    // const socket = io.connect('http://localhost:8080');
+    const socket = io.connect('192.168.1.56:8080');
     socket.on('connect', () => {
       socket.emit('get-player-id', callback);
 

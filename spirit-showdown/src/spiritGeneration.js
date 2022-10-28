@@ -106,8 +106,6 @@ function getHueType(hue, sat, li) {
     {low: 345, high: 360, value: "Blood"},
   ];
   
-  console.log("Hue: " + hue + ", Sat: " + sat + ", Li: " + li);
-  console.log(sat + li, sat + li < 50);
   if (li < 10 || (sat + li < 50)) {
     return "Dark";
   }
@@ -352,7 +350,6 @@ export function createRandomSpirit(seed) {
 
   /* [===== =================== =====] */
 
-  console.log(name_);
   const spirit = {
     name: name_,
     level: level,

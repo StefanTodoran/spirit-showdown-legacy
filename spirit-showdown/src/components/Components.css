@@ -569,7 +569,7 @@ always have to do something differently... */
 }
 
 #demo-meditate-button:hover ~ .demo-move-label::after {
-  content: "Meditate reduces incoming damage by 50% and provides a 25% damage boost to your next attack.";
+  content: "Meditate reduces incoming damage and provides a small damage boost to your next attack.";
 }
 
 #demo-dodge-button {
@@ -589,5 +589,5 @@ always have to do something differently... */
 }
 
 #demo-charge-button:hover ~ .demo-move-label::after {
-  content: "Charge increases your damage vulnerability by 45%, but provides a 150% damage boost to your next attack.";
+  content: "Charge increases your damage vulnerability, but provides a very large damage boost to your next attack.";
 }

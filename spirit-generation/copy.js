@@ -2,7 +2,7 @@ const fs = require('fs');
 
 async function main() {
   const src = './';
-  const destinations = ['../spirit-showdown/src/', '../server/'];
+  const destinations = ['../spirit-showdown/src/', '../server/', '../random-spirit/src/'];
 
   const files = [
     'spiritGeneration.js', 'assets/words.js', 'assets/abilities.js',
